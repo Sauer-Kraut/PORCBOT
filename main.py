@@ -15,17 +15,10 @@ decline_emoji = "❌"
 contacted_file_name = "Contacted_Users.json"
 
 # invloved_roles = ["Meteorite", "Malachite","Adamantium", "Mithril", "Platinum", "Diamond", "Gold", "Silver", "Bronze", "Steel", "Copper", "Iron", "Stone"]
-<<<<<<< HEAD
 invloved_roles = ["DEV"]
 
 
 @tasks.loop(minutes=2)
-=======
-invloved_roles = ["Mod"]
-
-
-@tasks.loop(minutes=3)
->>>>>>> d7281aa52333ae74eccf364bacc59fba1f226917
 async def reaction_checker():
     print(f"{bot.user} is now online! OwO")
 
@@ -54,12 +47,8 @@ async def reaction_checker():
 
     for user_data in user_list:
 
-<<<<<<< HEAD
         user = bot.get_user(user_data[2])
         role = user_data[1]
-=======
-        user = bot.get_user(user_data[1])
->>>>>>> d7281aa52333ae74eccf364bacc59fba1f226917
         reactions = await check_reaction(user)
 
         denial = False
@@ -74,7 +63,6 @@ async def reaction_checker():
                 denial = True
 
         if approval & (not denial):
-<<<<<<< HEAD
             await store_user("Remaining_Users.json", user, role)
             await remove_user(contacted_file_name, user, role)
             await remove_user("Declining_Users.json", user, role)
@@ -84,17 +72,6 @@ async def reaction_checker():
             await store_user("Declining_Users.json", user, role)
             await remove_user(contacted_file_name, user, role)
             await remove_user("Remaining_Users.json", user, role)
-=======
-            await store_user("Remaining_Users.json", user)
-            await remove_user(contacted_file_name, user)
-            await remove_user("Declining_Users.json", user)
-            print(f"\nuser {user.name} approved")
-
-        elif denial & (not approval):
-            await store_user("Declining_Users.json", user)
-            await remove_user(contacted_file_name, user)
-            await remove_user("Remaining_Users.json", user)
->>>>>>> d7281aa52333ae74eccf364bacc59fba1f226917
             print(f"\nuser {user.name} opted out")
 
     print(f"\ncaught up with responses ^^")
@@ -108,44 +85,6 @@ async def on_ready():
     reaction_checker.start()
 
 
-<<<<<<< HEAD
-=======
-@bot.event
-async def on_reaction_add(reaction, reacter):
-
-    if not reacter.id == bot.user.id:
-
-        print(f"\nsomeone reacted to my message ^^")
-
-        user = bot.get_user(reacter.id)
-        reactions = await check_reaction(user)
-
-        denial = False
-        approval = False
-
-        for reaction in reactions:
-
-            if reaction == accept_emoji:
-                approval = True
-
-            elif reaction == decline_emoji:
-                denial = True
-
-        if approval & (not denial):
-            await store_user("Remaining_Users.json", user)
-            await remove_user(contacted_file_name, user)
-            await remove_user("Declining_Users.json", user)
-            print(f"\nuser {user.name} approved")
-
-        elif denial & (not approval):
-            await store_user("Declining_Users.json", user)
-            await remove_user(contacted_file_name, user)
-            await remove_user("Remaining_Users.json", user)
-            print(f"\nuser {user.name} opted out")
-
-
-
->>>>>>> d7281aa52333ae74eccf364bacc59fba1f226917
 
 @bot.command()
 async def CTA_season_invite(context):
@@ -157,11 +96,7 @@ async def CTA_season_invite(context):
         for user in users:
 
             await send_prompt_message(user)
-<<<<<<< HEAD
             await store_user(contacted_file_name, user, role)
-=======
-            await store_user(contacted_file_name, user)
->>>>>>> d7281aa52333ae74eccf364bacc59fba1f226917
 
 
 
@@ -202,11 +137,7 @@ async def get_role_members(context, role_name):
 
 
 # @bot.command()
-<<<<<<< HEAD
 async def store_user(list_name, User, role):
-=======
-async def store_user(list_name, User):
->>>>>>> d7281aa52333ae74eccf364bacc59fba1f226917
     # list_name = "Contacted_Users.json"
     # User = context.author
 
@@ -217,21 +148,13 @@ async def store_user(list_name, User):
             user_list = []
 
     double_check = True
-<<<<<<< HEAD
     user_data = [User.name, role, User.id]
-=======
-    user_data = [User.name, User.id]
->>>>>>> d7281aa52333ae74eccf364bacc59fba1f226917
     for entry in user_list:
         if user_data == entry:
             double_check = False
 
     if double_check:
-<<<<<<< HEAD
         user_list.append([User.name, role, User.id])
-=======
-        user_list.append([User.name, User.id])
->>>>>>> d7281aa52333ae74eccf364bacc59fba1f226917
 
     with open(list_name, "w") as file:
         json.dump(user_list, file)
@@ -239,11 +162,7 @@ async def store_user(list_name, User):
 
 
 # @bot.command()
-<<<<<<< HEAD
 async def remove_user(list_name, User, role):
-=======
-async def remove_user(list_name, User):
->>>>>>> d7281aa52333ae74eccf364bacc59fba1f226917
     # list_name = "Contacted_Users.json"
     # User = context.author
 
@@ -253,11 +172,7 @@ async def remove_user(list_name, User):
         except (FileNotFoundError, json.JSONDecodeError):
             user_list = []
 
-<<<<<<< HEAD
     user_data = [User.name, role, User.id]
-=======
-    user_data = [User.name, User.id]
->>>>>>> d7281aa52333ae74eccf364bacc59fba1f226917
     try:
         user_list.remove(user_data)
     except:
