@@ -1,6 +1,10 @@
 import discord
 from discord.ext import tasks, commands
+import SecurityModule
 import json
+
+# Setup security module for encryption and decryption
+securityModule = SecurityModule
 
 # Bot prefix UwU (you can change it if you like)!
 intents = discord.Intents.default()
