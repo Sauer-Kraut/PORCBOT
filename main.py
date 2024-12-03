@@ -2,6 +2,7 @@ import discord
 from discord.ext import tasks, commands
 import SecurityModule
 import json
+import os
 
 # Setup security module for encryption and decryption
 securityModule = SecurityModule
@@ -12,6 +13,8 @@ intents.members = True  # Enable Server Members Intent
 intents.reactions = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+token = os.getenv("PORC_TOKEN")
+
 prompt = "This is a test, please react with ❌ or ✅ depending on how you feel about nuclear war"
 accept_emoji = "✅"
 decline_emoji = "❌"
@@ -21,6 +24,8 @@ contacted_file_name = "Contacted_Users.json"
 # invloved_roles = ["Meteorite", "Malachite","Adamantium", "Mithril", "Platinum", "Diamond", "Gold", "Silver", "Bronze", "Steel", "Copper", "Iron", "Stone"]
 invloved_roles = ["DEV"]
 
+authority_roles = ["DEV"]
+request_denial = "You do not have the necessary permissions to execute this command"
 
 @tasks.loop(minutes=2)
 async def reaction_checker():
@@ -89,26 +94,52 @@ async def on_ready():
     reaction_checker.start()
 
 
+async def authenticate_user(context, user):
+
+    authenticated = False
+    authenticated_members = []
+
+    for role in authority_roles:
+
+        authenticated_members = get_role_members(context, role)
+
+        for member in authenticated_members:
+
+            if user.id == member.id:
+
+                authenticated = True
+                break
+
+    return authenticated
+
+
+
+
 
 @bot.command()
 async def CTA_season_invite(context):
 
-    for role in invloved_roles:
+    if authenticate_user(context, context.author):
 
-        users = await get_role_members(context, role)
+        for role in invloved_roles:
 
-        for user in users:
+            users = await get_role_members(context, role)
 
-            await send_prompt_message(user)
-            await store_user(contacted_file_name, user, role)
+            for user in users:
+
+                await send_prompt_message(user)
+                await store_user(contacted_file_name, user, role)
+
+    else:
+
+        await send_request_denial(context.author)
 
 
 
 
 
-@bot.command()
 async def send_prompt_message(user_target):
-    print(f"\nsending a message to user: {user_target}")
+    print(f"\nsending a prompt message to user: {user_target}")
 
     try:
         message = await user_target.send(f"{prompt}")
@@ -116,7 +147,20 @@ async def send_prompt_message(user_target):
         await message.add_reaction(accept_emoji)
         await message.add_reaction(decline_emoji)
 
-    except:
+    except discord.Forbidden:
+        print(f"An issue occurred while sending dm")
+
+
+
+
+
+async def send_request_denial(user_target):
+    print(f"\nsending a request denial message to user: {user_target}")
+
+    try:
+        await user_target.send(f"{request_denial}")
+
+    except discord.Forbidden:
         print(f"An issue occurred while sending dm")
 
 
@@ -241,4 +285,4 @@ async def check_reaction(user):
 
 
 
-bot.run("placeholder token")
+bot.run(token)
