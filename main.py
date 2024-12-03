@@ -5,12 +5,13 @@ import json
 import os
 
 # Setup security module for encryption and decryption
-securityModule = SecurityModule
+securityModule = SecurityModule.SecurityModule()
 
 # Bot prefix UwU (you can change it if you like)!
 intents = discord.Intents.default()
 intents.members = True  # Enable Server Members Intent
 intents.reactions = True
+intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 token = os.getenv("PORC_TOKEN")
@@ -21,8 +22,8 @@ decline_emoji = "❌"
 
 contacted_file_name = "Contacted_Users.json"
 
-# invloved_roles = ["Meteorite", "Malachite","Adamantium", "Mithril", "Platinum", "Diamond", "Gold", "Silver", "Bronze", "Steel", "Copper", "Iron", "Stone"]
-invloved_roles = ["DEV"]
+# involved_roles = ["Meteorite", "Malachite","Adamantium", "Mithril", "Platinum", "Diamond", "Gold", "Silver", "Bronze", "Steel", "Copper", "Iron", "Stone"]
+involved_roles = ["DEV"]
 
 authority_roles = ["DEV"]
 request_denial = "You do not have the necessary permissions to execute this command"
@@ -31,31 +32,17 @@ request_denial = "You do not have the necessary permissions to execute this comm
 async def reaction_checker():
     print(f"{bot.user} is now online! OwO")
 
+    print(f"\nReading out all list: \ncontacted{await read_list(contacted_file_name)} \ndeclined{await read_list('Declining_Users.json')} \napproval{await read_list('Remaining_Users.json')}")
     print(f"checking on contacted users")
-    user_list = []
 
-    with open(contacted_file_name, "r") as file:
-        try:
-            user_list.extend(json.load(file))
-        except (FileNotFoundError, json.JSONDecodeError):
-            user_list = []
-
-    with open("Remaining_Users.json", "r") as file:
-        try:
-            user_list.extend(json.load(file))
-        except (FileNotFoundError, json.JSONDecodeError):
-            user_list.extend([])
-
-    with open("Declining_Users.json", "r") as file:
-        try:
-            user_list.extend(json.load(file))
-        except (FileNotFoundError, json.JSONDecodeError):
-            user_list.extend([])
-
+    user_list = await read_list(contacted_file_name)
+    user_list.extend(await read_list("Remaining_Users.json"))
+    user_list.extend(await read_list("Declining_Users.json"))
 
 
     for user_data in user_list:
 
+        print(f"\nChecking user: {user_data}")
         user = bot.get_user(user_data[2])
         role = user_data[1]
         reactions = await check_reaction(user)
@@ -97,11 +84,10 @@ async def on_ready():
 async def authenticate_user(context, user):
 
     authenticated = False
-    authenticated_members = []
 
     for role in authority_roles:
 
-        authenticated_members = get_role_members(context, role)
+        authenticated_members = await get_role_members(context, role)
 
         for member in authenticated_members:
 
@@ -119,9 +105,10 @@ async def authenticate_user(context, user):
 @bot.command()
 async def CTA_season_invite(context):
 
-    if authenticate_user(context, context.author):
+    print(f"\nCTA_season_invite has been called")
+    if await authenticate_user(context, context.author):
 
-        for role in invloved_roles:
+        for role in involved_roles:
 
             users = await get_role_members(context, role)
 
@@ -153,7 +140,7 @@ async def send_prompt_message(user_target):
 
 
 
-
+# TODO: Make this send message in channel rather then dm
 async def send_request_denial(user_target):
     print(f"\nsending a request denial message to user: {user_target}")
 
@@ -184,6 +171,8 @@ async def get_role_members(context, role_name):
     return members_with_role
 
 
+
+
 # @bot.command()
 async def store_user(list_name, User, role):
     # list_name = "Contacted_Users.json"
@@ -196,17 +185,42 @@ async def store_user(list_name, User, role):
             user_list = []
 
     double_check = True
+
+    # User Data gets serialized (turned into a string), encrypted (turned into bytes and manipulated), and finally decoded (turned into text),
+    # so that it can then be written to the json file
     user_data = [User.name, role, User.id]
+    encrypted_user_data = securityModule.encrypt(user_data)
     for entry in user_list:
-        if user_data == entry:
+        decrypted_entry = securityModule.decrypt(entry)
+
+        if user_data == decrypted_entry:
             double_check = False
 
     if double_check:
-        user_list.append([User.name, role, User.id])
+        user_list.append(encrypted_user_data)
 
     with open(list_name, "w") as file:
         json.dump(user_list, file)
 
+
+
+async def read_list(list_name):
+    # list_name = "Contacted_Users.json"
+    # User = context.author
+
+    with open(list_name, "r") as file:
+        try:
+            user_list = json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError):
+            user_list = []
+
+    # User Data gets encoded (turned into bytes), decrypted (turned into bytes and manipulated), and finally deserialized (turned into a list),
+    # so that it can then be read
+    decrypted_list = []
+    for entry in user_list:
+        decrypted_list.append(securityModule.decrypt(entry))
+
+    return decrypted_list
 
 
 # @bot.command()
@@ -221,11 +235,11 @@ async def remove_user(list_name, User, role):
             user_list = []
 
     user_data = [User.name, role, User.id]
-    try:
-        user_list.remove(user_data)
-    except:
-        print(f"\nNo element to remove in user list")
+    for index, entry in enumerate(user_list):
+        decrypted_entry = securityModule.decrypt(entry)
 
+        if user_data == decrypted_entry:
+            del user_list[index]
 
     with open(list_name, "w") as file:
         json.dump(user_list, file)
@@ -245,7 +259,11 @@ async def get_user_reaction(message, reacting_user):
     user_reactions = []
 
     for reaction in reactions:
-        reacting_users = await reaction.users().flatten()
+
+        reacting_users = []
+        async for user in reaction.users():
+            reacting_users.append(user)
+
         for user in reacting_users:
 
             if user == reacting_user:
@@ -266,7 +284,9 @@ async def check_reaction(user):
 
     # apparently the output of .history is an async iterator, therefore flatten
     # chat_history = await dm_channel.history().filter(lambda m: m.author.id == bot.user.id).flatten()
-    chat_history = await dm_channel.history().flatten()
+    chat_history = []
+    async for message in dm_channel.history():
+        chat_history.append(message)
 
     # potential error, but shouldnt happen given the conditions to get on the list
     for message in chat_history:
