@@ -123,6 +123,28 @@ async def CTA_season_invite(context):
 
 
 
+@bot.command()
+async def get_invite_result(context):
+
+    print(f"\nInvite results requested by {context.author.name}")
+
+    if await authenticate_user(context, context.author):
+        print("accepted request")
+
+        response = f"Invite results: " \
+                   f"\ncontacted: {await read_list(contacted_file_name)} " \
+                   f"\ndeclined: {await read_list('Declining_Users.json')} " \
+                   f"\nconfirmed: {await read_list('Remaining_Users.json')}"
+
+        await sent_info_message(context.author, response)
+
+    else:
+        print("denied request")
+        await send_request_denial(context.author)
+
+
+
+
 
 
 async def send_prompt_message(user_target):
@@ -146,6 +168,18 @@ async def send_request_denial(user_target):
 
     try:
         await user_target.send(f"{request_denial}")
+
+    except discord.Forbidden:
+        print(f"An issue occurred while sending dm")
+
+
+
+
+async def sent_info_message(user_target, content):
+    print(f"\nsending an info message to user: {user_target}")
+
+    try:
+        message = await user_target.send(f"{content}")
 
     except discord.Forbidden:
         print(f"An issue occurred while sending dm")
