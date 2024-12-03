@@ -18,8 +18,8 @@ class SecurityModule:
     def decrypt(self, encrypted_data):
         data_encoded = encrypted_data.encode("utf-8")
         data_decrypted = self.fernet.decrypt(data_encoded)
-        data_serailized = pickle.loads(data_decrypted)
-        return json.loads(data_serailized)
+        data_serialized = pickle.loads(data_decrypted)
+        return json.loads(data_serialized)
 
     @staticmethod
     def get_key():

@@ -30,7 +30,6 @@ request_denial = "You do not have the necessary permissions to execute this comm
 
 @tasks.loop(minutes=2)
 async def reaction_checker():
-    print(f"{bot.user} is now online! OwO")
 
     print(f"\nReading out all list: \ncontacted{await read_list(contacted_file_name)} \ndeclined{await read_list('Declining_Users.json')} \napproval{await read_list('Remaining_Users.json')}")
     print(f"checking on contacted users")
@@ -62,13 +61,13 @@ async def reaction_checker():
             await store_user("Remaining_Users.json", user, role)
             await remove_user(contacted_file_name, user, role)
             await remove_user("Declining_Users.json", user, role)
-            print(f"\nuser {user.name} approved")
+            # print(f"\nuser {user.name} approved")
 
         elif denial & (not approval):
             await store_user("Declining_Users.json", user, role)
             await remove_user(contacted_file_name, user, role)
             await remove_user("Remaining_Users.json", user, role)
-            print(f"\nuser {user.name} opted out")
+            # print(f"\nuser {user.name} opted out")
 
     print(f"\ncaught up with responses ^^")
 
@@ -79,6 +78,12 @@ async def reaction_checker():
 async def on_ready():
     print(f"{bot.user} is now online! OwO")
     reaction_checker.start()
+
+
+@bot.event
+async def on_reaction_add(reaction, user):
+    if user.id != bot.user.id:
+        reaction_checker.restart()
 
 
 async def authenticate_user(context, user):
@@ -105,12 +110,15 @@ async def authenticate_user(context, user):
 @bot.command()
 async def CTA_season_invite(context):
 
-    print(f"\nCTA_season_invite has been called")
+    print(f"\nCTA_season_invite has been called\n")
     if await authenticate_user(context, context.author):
 
         for role in involved_roles:
 
             users = await get_role_members(context, role)
+
+            if len(users) < 1:
+                print(f"no members of the following role were messaged: {role}")
 
             for user in users:
 
@@ -188,7 +196,7 @@ async def sent_info_message(user_target, content):
 # @bot.command()
 async def get_role_members(context, role_name):
     # role_name = "Mod"
-    print(f"\ngetting members of role: {role_name}")
+    # print(f"\ngetting members of role: {role_name}")
 
     server = context.guild
     if not server:
@@ -201,7 +209,7 @@ async def get_role_members(context, role_name):
     # Dont know Python syntax well enough to fully understand whats going on here, but it should filter server members for members with role
     members_with_role = [member for member in server.members if role in member.roles]
 
-    print(f"\nFound the following members with role {role_name}: \n{members_with_role}")
+    # print(f"\nFound the following members with role {role_name}: \n{members_with_role}")
     return members_with_role
 
 
@@ -330,7 +338,9 @@ async def check_reaction(user):
 
     user_reactions = await get_user_reaction(prompt_message, user)
 
-    print(f"User {user.name} reacted with emojis: {user_reactions}")
+    if len(user_reactions) > 0:
+        print(f"User {user.name} reacted with emojis: {user_reactions}")
+
     return user_reactions
 
 
