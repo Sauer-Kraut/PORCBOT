@@ -16,13 +16,22 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 token = os.getenv("PORC_TOKEN")
 
-prompt = "This is a test, please react with ❌ or ✅ depending on how you feel about nuclear war"
+prompt = f'''
+Hello, I'm PORC bot, the new hire of the PORC organization team.
+As of now you are an active member of the second season of the PORC league which will end December 6th.
+If you want to **continue being a part of part of PORC for the third season please react to with** ✅ to this message.
+If you react with ❌ or do not react to this message you will **not be entered** into the third season of PORC.
+Thanks for participating and we hope you enjoy your time with PORC.
+
+**Do you want to participate in the third season of PORC?**
+'''.strip()
+
 accept_emoji = "✅"
 decline_emoji = "❌"
 
 contacted_file_name = "Contacted_Users.json"
 
-# involved_roles = ["Meteorite", "Malachite","Adamantium", "Mithril", "Platinum", "Diamond", "Gold", "Silver", "Bronze", "Steel", "Copper", "Iron", "Stone"]
+# involved_roles = ["Meteorite", "Malachite", "Adamantium", "Mithril", "Platinum", "Diamond", "Gold", "Silver", "Bronze", "Steel", "Copper", "Iron", "Stone"]
 involved_roles = ["DEV"]
 
 authority_roles = ["DEV"]
