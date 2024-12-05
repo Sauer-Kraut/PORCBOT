@@ -2,7 +2,7 @@ import discord
 from discord.ext import tasks, commands
 import SecurityModule
 import StorageModule as Storage
-import json
+from colorama import Fore, Style
 import os
 
 # Setup security module for encryption and decryption
@@ -18,9 +18,9 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 token = os.getenv("PORC_TOKEN")
 
 stay_prompt = f'''
-Hello, I'm PORC bot, the new hire of the PORC organization team.
+Hello, I'm PORC bot, the newest member of the PORC organization team.
 As of now you are an active member of the second season of the PORC league which will end December 6th.
-If you want to **continue being a part of part of PORC for the third season please react to with** ✅ to this message.
+If you want to **continue being a part of part of PORC for the third season please react with** ✅ to this message.
 If you react with ❌ or do not react to this message you will **not be entered** into the third season of PORC.
 Thanks for participating and we hope you enjoy your time with PORC.
 
@@ -28,9 +28,17 @@ Thanks for participating and we hope you enjoy your time with PORC.
 '''.strip()
 
 
-invite_prompt = f'''This is a test invite message, please react with either ✅ or ❌ depending on your opinion about the spin of electrons'''
-invite_confirm_prompt = f'''This is a test invite confirm message, please respond with your BP'''
-invite_confirmation_message = f'''This is a test message, You have been successfully signed up for PORC season 3'''
+invite_prompt = f'''Hello, I'm PORC bot, the newest member of the PORC organization team.
+You are receiving this message because you currently have the competitor role but are not competing in the PORC league.
+If you want to **sign up for the third season of PORC**, which will start **December 7th**, please react with ✅ to this message.
+If you react with ❌ or do not react, you will **not be entered** into the third season of PORC.
+In case you already signed up for PORC season 3 via the form, feel free to accept or ignore this message.
+
+**Do you want to participate in the third season of PORC?**'''.strip()
+
+invite_confirm_prompt = f'''What is your current BP?'''.strip()
+
+invite_confirmation_message = f'''Congrats, you have been successfully signed up for PORC season 3!'''.strip()
 
 
 accept_emoji = "✅"
@@ -47,8 +55,8 @@ confirmed_invite_file_name = r"season_invites\Confirmed_Users.json"
 leap_roles = ["Meteorite", "Malachite", "Adamantium", "Mithril", "Platinum", "Diamond", "Gold", "Silver", "Bronze", "Steel", "Copper", "Iron", "Stone"]
 # leap_roles = ["DEV"]
 
-# invite_roles = ["Competitor"]
-invite_roles = ["DEV"]
+# sign_up_roles = ["Competitor"]
+sign_up_roles = ["Mod"]
 
 authority_roles = ["DEV"]
 request_denial = "You do not have the necessary permissions to execute this command"
@@ -56,11 +64,11 @@ request_denial = "You do not have the necessary permissions to execute this comm
 @tasks.loop(minutes=2)
 async def leap_checker():
 
-    print(f"\nReading out all list: "
-          f"\ncontacted{await Storage.read_list(contacted_leap_file_name)} "
-          f"\ndeclined{await Storage.read_list(declined_leap_file_name)} "
-          f"\napproval{await Storage.read_list(remaining_leap_file_name)}")
-    print(f"checking on contacted users")
+    # print(f"\nReading out all list: "
+    #      f"\ncontacted{await Storage.read_list(contacted_leap_file_name)} "
+    #      f"\ndeclined{await Storage.read_list(declined_leap_file_name)} "
+    #      f"\napproval{await Storage.read_list(remaining_leap_file_name)}")
+    print(Fore.RESET + Style.NORMAL + f"checking on contacted users")
 
     user_list = await Storage.read_list(contacted_leap_file_name)
     user_list.extend(await Storage.read_list(remaining_leap_file_name))
@@ -69,7 +77,7 @@ async def leap_checker():
 
     for user_data in user_list:
 
-        print(f"\nChecking user: {user_data}")
+        # print(f"\nChecking user: {user_data}")
         user = bot.get_user(user_data[2])
         role = user_data[1]
         reactions = await check_reaction(user, stay_prompt)
@@ -97,7 +105,7 @@ async def leap_checker():
             await Storage.remove_user(remaining_leap_file_name, user, role)
             # print(f"\nuser {user.name} opted out")
 
-    print(f"\ncaught up with responses ^^")
+    print(Fore.GREEN + Style.NORMAL + f"caught up with responses ^^")
 
 
 
@@ -107,16 +115,16 @@ async def leap_checker():
 @tasks.loop(minutes=3)
 async def invite_reaction_checker():
 
-    print(f"\nchecking on invited users")
-    print(f"Invited users: "
-          f"\n{await Storage.read_list(contacted_invite_file_name)}")
+    print(Fore.RESET + Style.NORMAL + f"\nchecking on invited users")
+    # print(f"Invited users: "
+    #      f"\n{await Storage.read_list(contacted_invite_file_name)}")
 
     user_list = await Storage.read_list(contacted_invite_file_name)
 
 
     for user_data in user_list:
 
-        print(f"\nChecking user: {user_data}")
+        # print(Fore.RESET + Style.RESET_ALL + f"\nChecking user: {user_data}")
         user = bot.get_user(user_data[2])
         reactions = await check_reaction(user, invite_prompt)
 
@@ -141,7 +149,7 @@ async def invite_reaction_checker():
             await Storage.remove_user(contacted_invite_file_name, user, "")
             # print(f"\nuser {user.name} declined the invite")
 
-    print(f"\nchecked all invite reactions ^^")
+    print(Fore.GREEN + Style.NORMAL + f"checked all invite reactions ^^")
 
 
 
@@ -150,9 +158,9 @@ async def invite_reaction_checker():
 @tasks.loop(minutes=3)
 async def invite_response_checker():
 
-    print(f"\nchecking on approved invited users")
-    print(f"Approved invited users: "
-          f"\n{await Storage.read_list(pending_invite_file_name)}")
+    print(Fore.RESET + Style.NORMAL + f"\nchecking on approved invited users")
+    # print(f"Approved invited users: "
+    #      f"\n{await Storage.read_list(pending_invite_file_name)}")
 
     user_list = await Storage.read_list(pending_invite_file_name)
 
@@ -169,14 +177,14 @@ async def invite_response_checker():
             await send_info_message(user, invite_confirmation_message)
             await Storage.remove_user(pending_invite_file_name, user, "")
 
-    print(f"\nchecked all invite reactions ^^")
+    print(Fore.GREEN + Style.NORMAL + f"checked all invite responses ^^")
 
 
 
 # Event: when the bot is ready
 @bot.event
 async def on_ready():
-    print(f"{bot.user} is now online! OwO")
+    print(Fore.RESET + Style.BRIGHT + f"{bot.user} is now online! OwO")
     leap_checker.start()
     invite_reaction_checker.start()
     invite_response_checker.start()
@@ -226,15 +234,20 @@ async def authenticate_user(context, user):
 @bot.command()
 async def CTA_season_leap(context):
 
-    print(f"\nCTA_season_leap has been called\n")
+    print(Fore.RESET + Style.BRIGHT + f"\nCTA_season_leap has been called by {context.author}")
     if await authenticate_user(context, context.author):
+        print(Fore.GREEN + Style.NORMAL + "request has been accepted\n")
 
         for role in leap_roles:
 
             users = await get_role_members(context, role)
 
             if len(users) < 1:
-                print(f"no members of the following role were messaged: {role}")
+                print(Fore.YELLOW + Style.NORMAL + "no members of the following role were messaged: {role}")
+
+            else:
+                print(f"{len(users)} members of the following role were messaged: {role}")
+
 
             for user in users:
 
@@ -243,6 +256,7 @@ async def CTA_season_leap(context):
 
     else:
 
+        print(Fore.RED + Style.NORMAL + "request has been denied")
         await send_request_denial(context.author)
 
 
@@ -250,10 +264,10 @@ async def CTA_season_leap(context):
 @bot.command()
 async def get_leap_result(context):
 
-    print(f"\nLeap results requested by {context.author.name}")
+    print(Fore.RESET + Style.BRIGHT + f"\nLeap results requested by {context.author.name}")
 
     if await authenticate_user(context, context.author):
-        print("accepted request")
+        print(Fore.GREEN + Style.NORMAL + "request has been accepted")
 
         response = f"Leap results: " \
                    f"\n**contacted:** \n{await Storage.read_list_no_id(contacted_leap_file_name)} " \
@@ -263,7 +277,8 @@ async def get_leap_result(context):
         await send_info_message(context.author, response)
 
     else:
-        print("denied request")
+
+        print(Fore.RED + Style.NORMAL + "request has been denied")
         await send_request_denial(context.author)
 
 
@@ -272,13 +287,14 @@ async def get_leap_result(context):
 
 
 @bot.command()
-async def CTA_season_invite(context):
+async def CTA_season_sign_up(context):
 
-    print(f"\nCTA_season_invite has been called\n")
+    print(Fore.RESET + Style.BRIGHT + "\nCTA_season_sign_up has been called by {context.author}")
     if await authenticate_user(context, context.author):
+        print(Fore.GREEN + Style.NORMAL + "request has been accepted")
 
         excluded_users = []
-        leap_roles = ["Bronze", "Adamantium"]
+        leap_roles = ["Bronze", "Meteorite"]
 
 
         for role in leap_roles:
@@ -286,7 +302,7 @@ async def CTA_season_invite(context):
             users = await get_role_members(context, role)
             excluded_users.extend(users)
 
-        for role in invite_roles:
+        for role in sign_up_roles:
 
             users = await get_role_members(context, role)
             included_users = [user for user in users if user not in excluded_users]
@@ -299,18 +315,19 @@ async def CTA_season_invite(context):
 
     else:
 
+        print(Fore.RED + Style.NORMAL + "request has been denied")
         await send_request_denial(context.author)
 
 
 
 
 @bot.command()
-async def get_invite_result(context):
+async def get_sign_up_result(context):
 
-    print(f"\nInvite results requested by {context.author.name}")
+    print(Fore.RESET + Style.BRIGHT + f"\nInvite results requested by {context.author.name}")
 
     if await authenticate_user(context, context.author):
-        print("accepted request")
+        print(Fore.GREEN + Style.NORMAL + "request has been accepted")
 
         response = f"Invite results: " \
                    f"\n**confirmed:** {await Storage.read_list_no_id(confirmed_invite_file_name)} "
@@ -318,7 +335,8 @@ async def get_invite_result(context):
         await send_info_message(context.author, response)
 
     else:
-        print("denied request")
+
+        print(Fore.YELLOW + Style.NORMAL + "request has been denied")
         await send_request_denial(context.author)
 
 
@@ -327,7 +345,7 @@ async def get_invite_result(context):
 
 
 async def send_prompt_message(user_target, prompt):
-    print(f"\nsending a prompt message to user: {user_target}")
+    print(Fore.RESET + Style.NORMAL + f"\nsending a prompt message to user: {user_target}")
 
     try:
         message = await user_target.send(f"{prompt}")
@@ -336,32 +354,32 @@ async def send_prompt_message(user_target, prompt):
         await message.add_reaction(decline_emoji)
 
     except discord.Forbidden:
-        print(f"An issue occurred while sending dm")
+        print(Fore.RED + Style.NORMAL + "An issue occurred while sending dm")
 
 
 
 
 # TODO: Make this send message in channel rather then dm
 async def send_request_denial(user_target):
-    print(f"\nsending a request denial message to user: {user_target}")
+    print(Fore.YELLOW + Style.NORMAL + "\nsending a request denial message to user: {user_target}")
 
     try:
         await user_target.send(f"{request_denial}")
 
     except discord.Forbidden:
-        print(f"An issue occurred while sending dm")
+        print(Fore.RED + Style.NORMAL + f"An issue occurred while sending dm")
 
 
 
 
 async def send_info_message(user_target, content):
-    print(f"\nsending an info message to user: {user_target}")
+    print(Fore.RESET + Style.NORMAL + f"\nsending an info message to user: {user_target}")
 
     try:
         message = await user_target.send(f"{content}")
 
     except discord.Forbidden:
-        print(f"An issue occurred while sending dm")
+        print(Fore.RED + Style.NORMAL + "An issue occurred while sending dm")
 
 
 # @bot.command()
@@ -371,11 +389,11 @@ async def get_role_members(context, role_name):
 
     server = context.guild
     if not server:
-        print(f"\nA problem occurred while fetching discord server")
+        print(Fore.RED + Style.NORMAL + f"\nA problem occurred while fetching discord server")
 
     role = discord.utils.get(server.roles, name=role_name)
     if not role:
-        print(f"\nA problem occurred while fetching discord role")
+        print(Fore.RED + Style.NORMAL + f"\nA problem occurred while fetching discord role")
 
     # Dont know Python syntax well enough to fully understand whats going on here, but it should filter server members for members with role
     members_with_role = [member for member in server.members if role in member.roles]
@@ -437,8 +455,8 @@ async def check_reaction(user, prompt):
 
         user_reactions = await get_user_reaction(prompt_message, user)
 
-        if len(user_reactions) > 0:
-            print(f"User {user.name} reacted with emojis: {user_reactions}")
+        # if len(user_reactions) > 0:
+            # print(f"User {user.name} reacted with emojis: {user_reactions}")
 
     except:
         user_reactions = []
@@ -478,8 +496,8 @@ async def check_response(user, prompt):
         if response_index >= 0:
             response_messages.append(chat_history[response_index].content)
 
-        if len(response_messages) > 0:
-            print(f"User {user.name} responded with: {response_messages[0]}")
+        # if len(response_messages) > 0:
+            # print(f"User {user.name} responded with: {response_messages[0]}")
 
     except:
         response_messages = []
