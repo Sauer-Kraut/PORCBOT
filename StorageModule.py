@@ -99,3 +99,8 @@ async def read_list_no_id(list_name):
         decrypted_list.append(parsed_entry)
 
     return decrypted_list
+
+
+
+
+# TODO: Add a check for user function

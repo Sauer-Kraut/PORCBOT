@@ -17,10 +17,23 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 token = os.getenv("PORC_TOKEN")
 
+# better version but to late to change now, for next season
+# stay_prompt = f'''
+# Hello, I'm PORC bot, the newest member of the PORC organization team.
+# As of now, you are an active member of the second season of the PORC league, which will end on December 6th.
+# If you want to **continue being a part of PORC for the third season, please react with** ✅ to this message.
+# If you react with ❌ or do not react to this message, you will **not be entered** into the third season of PORC.
+# Thanks for participating, and we hope you enjoy your time with PORC.
+
+# **Do you want to participate in the third season of PORC?**
+# '''.strip()
+
+
+
 stay_prompt = f'''
-Hello, I'm PORC bot, the newest member of the PORC organization team.
+Hello, I'm PORC bot, the new hire of the PORC organization team.
 As of now you are an active member of the second season of the PORC league which will end December 6th.
-If you want to **continue being a part of part of PORC for the third season please react with** ✅ to this message.
+If you want to **continue being a part of part of PORC for the third season please react to with** ✅ to this message.
 If you react with ❌ or do not react to this message you will **not be entered** into the third season of PORC.
 Thanks for participating and we hope you enjoy your time with PORC.
 
@@ -28,17 +41,27 @@ Thanks for participating and we hope you enjoy your time with PORC.
 '''.strip()
 
 
-invite_prompt = f'''Hello, I'm PORC bot, the newest member of the PORC organization team.
+invite_prompt = f'''
+Hello, I'm PORC bot, the newest member of the PORC organization team.
 You are receiving this message because you currently have the competitor role but are not competing in the PORC league.
 If you want to **sign up for the third season of PORC**, which will start **December 7th**, please react with ✅ to this message.
 If you react with ❌ or do not react, you will **not be entered** into the third season of PORC.
 In case you already signed up for PORC season 3 via the form, feel free to accept or ignore this message.
 
-**Do you want to participate in the third season of PORC?**'''.strip()
+**Do you want to participate in the third season of PORC?**
+'''.strip()
 
 invite_confirm_prompt = f'''What is your current BP?'''.strip()
 
-invite_confirmation_message = f'''Congrats, you have been successfully signed up for PORC season 3!'''.strip()
+invite_confirmation_message = f'''Congrats! **You are now signed up for PORC season 3**!
+If you change your mind later, simply update your reaction to the invite message.'''.strip()
+
+invite_decline_confirmation = f'''**Your decline has been registered successfully**!
+If you change your mind later, simply update your reaction to the invite message.'''.strip()
+
+application_withdrawal_confirmation = f'''**Your application has been withdrawn**.'''.strip()
+
+application_reenter_confirmation = f'''**Your application has been reentered successfully**.'''.strip()
 
 
 accept_emoji = "✅"
@@ -51,12 +74,13 @@ declined_leap_file_name = "season_leaps/Declining_Users.json"
 contacted_invite_file_name = r"season_invites\Invited_Users.json"
 pending_invite_file_name = r"season_invites\Pending_Confirms.json"
 confirmed_invite_file_name = r"season_invites\Confirmed_Users.json"
+declined_invite_file_name = r"season_invites\Declined_Invites.json"
 
 leap_roles = ["Meteorite", "Malachite", "Adamantium", "Mithril", "Platinum", "Diamond", "Gold", "Silver", "Bronze", "Steel", "Copper", "Iron", "Stone"]
 # leap_roles = ["DEV"]
 
 # sign_up_roles = ["Competitor"]
-sign_up_roles = ["Mod"]
+sign_up_roles = ["Competitor"]
 
 authority_roles = ["DEV"]
 request_denial = "You do not have the necessary permissions to execute this command"
@@ -119,9 +143,68 @@ async def invite_reaction_checker():
     # print(f"Invited users: "
     #      f"\n{await Storage.read_list(contacted_invite_file_name)}")
 
+    user_list = await Storage.read_list(confirmed_invite_file_name)
+    for user_data in user_list:
+
+        # print(Fore.RESET + Style.RESET_ALL + f"\nChecking user: {user_data}")
+        user = bot.get_user(user_data[2])
+        reactions = await check_reaction(user, invite_prompt)
+
+        denial = False
+        approval = False
+
+        for reaction in reactions:
+
+            if reaction == accept_emoji:
+                approval = True
+
+            if reaction == decline_emoji:
+                denial = True
+
+        if denial & (not approval):
+            await Storage.store_user(declined_invite_file_name, user, "withdrawn application")
+            await send_info_message(user, application_withdrawal_confirmation)
+            print(Fore.YELLOW + Style.NORMAL + f"\nuser {user.name} has nullified his application")
+
+
+
+    user_list = await Storage.read_list(declined_invite_file_name)
+    for user_data in user_list:
+
+        # print(Fore.RESET + Style.RESET_ALL + f"\nChecking user: {user_data}")
+        user = bot.get_user(user_data[2])
+        reactions = await check_reaction(user, invite_prompt)
+
+        denial = False
+        approval = False
+
+        for reaction in reactions:
+
+            if reaction == accept_emoji:
+                approval = True
+
+            if reaction == decline_emoji:
+                denial = True
+
+        if approval & (not denial):
+
+            marker = user_data[1]
+
+            if marker == "withdrawn application":
+                await Storage.remove_user(declined_invite_file_name, user, user_data[1])
+                await send_info_message(user, application_reenter_confirmation)
+                print(Fore.GREEN + Style.NORMAL + f"\nuser {user.name} has reactivated his application")
+
+
+            else:
+                await Storage.store_user(contacted_invite_file_name, user, "")
+                await Storage.remove_user(declined_invite_file_name, user, user_data[1])
+                await send_info_message(user, application_reenter_confirmation)
+                print(Fore.GREEN + Style.NORMAL + f"\nuser {user.name} has undone his decline")
+
+
+
     user_list = await Storage.read_list(contacted_invite_file_name)
-
-
     for user_data in user_list:
 
         # print(Fore.RESET + Style.RESET_ALL + f"\nChecking user: {user_data}")
@@ -141,13 +224,15 @@ async def invite_reaction_checker():
 
         if approval & (not denial):
             await Storage.store_user(pending_invite_file_name, user, "")
-            await send_info_message(user, invite_confirm_prompt)
             await Storage.remove_user(contacted_invite_file_name, user, "")
-            # print(f"\nuser {user.name} approved the invite")
+            await send_info_message(user, invite_confirm_prompt)
+            print(Fore.GREEN + Style.NORMAL + f"\nuser {user.name} agreed to his invite")
 
         elif denial & (not approval):
             await Storage.remove_user(contacted_invite_file_name, user, "")
-            # print(f"\nuser {user.name} declined the invite")
+            await Storage.store_user(declined_invite_file_name, user, "")
+            await send_info_message(user, invite_decline_confirmation)
+            print(Fore.YELLOW + Style.NORMAL + f"\nuser {user.name} has declined his invite")
 
     print(Fore.GREEN + Style.NORMAL + f"checked all invite reactions ^^")
 
@@ -294,7 +379,7 @@ async def CTA_season_sign_up(context):
         print(Fore.GREEN + Style.NORMAL + "request has been accepted")
 
         excluded_users = []
-        leap_roles = ["Bronze", "Meteorite"]
+        # leap_roles = ["Bronze"]
 
 
         for role in leap_roles:
@@ -330,7 +415,10 @@ async def get_sign_up_result(context):
         print(Fore.GREEN + Style.NORMAL + "request has been accepted")
 
         response = f"Invite results: " \
-                   f"\n**confirmed:** {await Storage.read_list_no_id(confirmed_invite_file_name)} "
+                   f"\n**didn't respond**: \n{await Storage.read_list_no_id(contacted_invite_file_name)}" \
+                   f"\n**declined**: \n{await Storage.read_list_no_id(declined_invite_file_name)}" \
+                   f"\n**pending BP answer**: \n{await Storage.read_list_no_id(pending_invite_file_name)}" \
+                   f"\n**confirmed:** \n{await Storage.read_list_no_id(confirmed_invite_file_name)} "
 
         await send_info_message(context.author, response)
 
