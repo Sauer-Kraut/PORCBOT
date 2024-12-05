@@ -1,6 +1,7 @@
 import discord
 from discord.ext import tasks, commands
 import SecurityModule
+import StorageModule as Storage
 import json
 import os
 
@@ -16,7 +17,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 token = os.getenv("PORC_TOKEN")
 
-prompt = f'''
+stay_prompt = f'''
 Hello, I'm PORC bot, the new hire of the PORC organization team.
 As of now you are an active member of the second season of the PORC league which will end December 6th.
 If you want to **continue being a part of part of PORC for the third season please react to with** ✅ to this message.
@@ -26,26 +27,44 @@ Thanks for participating and we hope you enjoy your time with PORC.
 **Do you want to participate in the third season of PORC?**
 '''.strip()
 
+
+invite_prompt = f'''This is a test invite message, please react with either ✅ or ❌ depending on your opinion about the spin of electrons'''
+invite_confirm_prompt = f'''This is a test invite confirm message, please respond with your BP'''
+invite_confirmation_message = f'''This is a test message, You have been successfully signed up for PORC season 3'''
+
+
 accept_emoji = "✅"
 decline_emoji = "❌"
 
-contacted_file_name = "Contacted_Users.json"
+contacted_leap_file_name = "season_leaps/Contacted_Users.json"
+remaining_leap_file_name = "season_leaps/Remaining_Users.json"
+declined_leap_file_name = "season_leaps/Declining_Users.json"
 
-# involved_roles = ["Meteorite", "Malachite", "Adamantium", "Mithril", "Platinum", "Diamond", "Gold", "Silver", "Bronze", "Steel", "Copper", "Iron", "Stone"]
-involved_roles = ["DEV"]
+contacted_invite_file_name = r"season_invites\Invited_Users.json"
+pending_invite_file_name = r"season_invites\Pending_Confirms.json"
+confirmed_invite_file_name = r"season_invites\Confirmed_Users.json"
+
+leap_roles = ["Meteorite", "Malachite", "Adamantium", "Mithril", "Platinum", "Diamond", "Gold", "Silver", "Bronze", "Steel", "Copper", "Iron", "Stone"]
+# leap_roles = ["DEV"]
+
+# invite_roles = ["Competitor"]
+invite_roles = ["DEV"]
 
 authority_roles = ["DEV"]
 request_denial = "You do not have the necessary permissions to execute this command"
 
 @tasks.loop(minutes=2)
-async def reaction_checker():
+async def leap_checker():
 
-    print(f"\nReading out all list: \ncontacted{await read_list(contacted_file_name)} \ndeclined{await read_list('Declining_Users.json')} \napproval{await read_list('Remaining_Users.json')}")
+    print(f"\nReading out all list: "
+          f"\ncontacted{await Storage.read_list(contacted_leap_file_name)} "
+          f"\ndeclined{await Storage.read_list(declined_leap_file_name)} "
+          f"\napproval{await Storage.read_list(remaining_leap_file_name)}")
     print(f"checking on contacted users")
 
-    user_list = await read_list(contacted_file_name)
-    user_list.extend(await read_list("Remaining_Users.json"))
-    user_list.extend(await read_list("Declining_Users.json"))
+    user_list = await Storage.read_list(contacted_leap_file_name)
+    user_list.extend(await Storage.read_list(remaining_leap_file_name))
+    user_list.extend(await Storage.read_list(declined_leap_file_name))
 
 
     for user_data in user_list:
@@ -53,7 +72,7 @@ async def reaction_checker():
         print(f"\nChecking user: {user_data}")
         user = bot.get_user(user_data[2])
         role = user_data[1]
-        reactions = await check_reaction(user)
+        reactions = await check_reaction(user, stay_prompt)
 
         denial = False
         approval = False
@@ -67,18 +86,90 @@ async def reaction_checker():
                 denial = True
 
         if approval & (not denial):
-            await store_user("Remaining_Users.json", user, role)
-            await remove_user(contacted_file_name, user, role)
-            await remove_user("Declining_Users.json", user, role)
+            await Storage.store_user(remaining_leap_file_name, user, role)
+            await Storage.remove_user(contacted_leap_file_name, user, role)
+            await Storage.remove_user(declined_leap_file_name, user, role)
             # print(f"\nuser {user.name} approved")
 
         elif denial & (not approval):
-            await store_user("Declining_Users.json", user, role)
-            await remove_user(contacted_file_name, user, role)
-            await remove_user("Remaining_Users.json", user, role)
+            await Storage.store_user(declined_leap_file_name, user, role)
+            await Storage.remove_user(contacted_leap_file_name, user, role)
+            await Storage.remove_user(remaining_leap_file_name, user, role)
             # print(f"\nuser {user.name} opted out")
 
     print(f"\ncaught up with responses ^^")
+
+
+
+
+
+
+@tasks.loop(minutes=3)
+async def invite_reaction_checker():
+
+    print(f"\nchecking on invited users")
+    print(f"Invited users: "
+          f"\n{await Storage.read_list(contacted_invite_file_name)}")
+
+    user_list = await Storage.read_list(contacted_invite_file_name)
+
+
+    for user_data in user_list:
+
+        print(f"\nChecking user: {user_data}")
+        user = bot.get_user(user_data[2])
+        reactions = await check_reaction(user, invite_prompt)
+
+        denial = False
+        approval = False
+
+        for reaction in reactions:
+
+            if reaction == accept_emoji:
+                approval = True
+
+            if reaction == decline_emoji:
+                denial = True
+
+        if approval & (not denial):
+            await Storage.store_user(pending_invite_file_name, user, "")
+            await send_info_message(user, invite_confirm_prompt)
+            await Storage.remove_user(contacted_invite_file_name, user, "")
+            # print(f"\nuser {user.name} approved the invite")
+
+        elif denial & (not approval):
+            await Storage.remove_user(contacted_invite_file_name, user, "")
+            # print(f"\nuser {user.name} declined the invite")
+
+    print(f"\nchecked all invite reactions ^^")
+
+
+
+
+
+@tasks.loop(minutes=3)
+async def invite_response_checker():
+
+    print(f"\nchecking on approved invited users")
+    print(f"Approved invited users: "
+          f"\n{await Storage.read_list(pending_invite_file_name)}")
+
+    user_list = await Storage.read_list(pending_invite_file_name)
+
+
+    for user_data in user_list:
+
+        print(f"\nChecking user: {user_data}")
+        user = bot.get_user(user_data[2])
+        responses = await check_response(user, invite_confirm_prompt)
+
+        if len(responses) > 0:
+
+            await Storage.store_user(confirmed_invite_file_name, user, responses)
+            await send_info_message(user, invite_confirmation_message)
+            await Storage.remove_user(pending_invite_file_name, user, "")
+
+    print(f"\nchecked all invite reactions ^^")
 
 
 
@@ -86,13 +177,29 @@ async def reaction_checker():
 @bot.event
 async def on_ready():
     print(f"{bot.user} is now online! OwO")
-    reaction_checker.start()
+    leap_checker.start()
+    invite_reaction_checker.start()
+    invite_response_checker.start()
 
 
 @bot.event
 async def on_reaction_add(reaction, user):
     if user.id != bot.user.id:
-        reaction_checker.restart()
+        leap_checker.restart()
+        invite_reaction_checker.restart()
+
+
+
+@bot.event
+async def on_message(message):
+    if message.author.id != bot.user.id:
+
+        # checks if message is dm
+        if isinstance(message.channel, discord.DMChannel):
+            invite_response_checker.restart()
+
+        await bot.process_commands(message)
+
 
 
 async def authenticate_user(context, user):
@@ -117,12 +224,12 @@ async def authenticate_user(context, user):
 
 
 @bot.command()
-async def CTA_season_invite(context):
+async def CTA_season_leap(context):
 
-    print(f"\nCTA_season_invite has been called\n")
+    print(f"\nCTA_season_leap has been called\n")
     if await authenticate_user(context, context.author):
 
-        for role in involved_roles:
+        for role in leap_roles:
 
             users = await get_role_members(context, role)
 
@@ -131,12 +238,69 @@ async def CTA_season_invite(context):
 
             for user in users:
 
-                await send_prompt_message(user)
-                await store_user(contacted_file_name, user, role)
+                await send_prompt_message(user, stay_prompt)
+                await Storage.store_user(contacted_leap_file_name, user, role)
 
     else:
 
         await send_request_denial(context.author)
+
+
+
+@bot.command()
+async def get_leap_result(context):
+
+    print(f"\nLeap results requested by {context.author.name}")
+
+    if await authenticate_user(context, context.author):
+        print("accepted request")
+
+        response = f"Leap results: " \
+                   f"\n**contacted:** \n{await Storage.read_list_no_id(contacted_leap_file_name)} " \
+                   f"\n**declined:** \n{await Storage.read_list_no_id(declined_leap_file_name)} " \
+                   f"\n**confirmed:** \n{await Storage.read_list_no_id(remaining_leap_file_name)}"
+
+        await send_info_message(context.author, response)
+
+    else:
+        print("denied request")
+        await send_request_denial(context.author)
+
+
+
+
+
+
+@bot.command()
+async def CTA_season_invite(context):
+
+    print(f"\nCTA_season_invite has been called\n")
+    if await authenticate_user(context, context.author):
+
+        excluded_users = []
+        leap_roles = ["Bronze", "Adamantium"]
+
+
+        for role in leap_roles:
+
+            users = await get_role_members(context, role)
+            excluded_users.extend(users)
+
+        for role in invite_roles:
+
+            users = await get_role_members(context, role)
+            included_users = [user for user in users if user not in excluded_users]
+
+            for user in included_users:
+
+                await send_prompt_message(user, invite_prompt)
+                # print(f"would have sent prompt message to {user.name}")
+                await Storage.store_user(contacted_invite_file_name, user, "")
+
+    else:
+
+        await send_request_denial(context.author)
+
 
 
 
@@ -149,11 +313,9 @@ async def get_invite_result(context):
         print("accepted request")
 
         response = f"Invite results: " \
-                   f"\ncontacted: {await read_list(contacted_file_name)} " \
-                   f"\ndeclined: {await read_list('Declining_Users.json')} " \
-                   f"\nconfirmed: {await read_list('Remaining_Users.json')}"
+                   f"\n**confirmed:** {await Storage.read_list_no_id(confirmed_invite_file_name)} "
 
-        await sent_info_message(context.author, response)
+        await send_info_message(context.author, response)
 
     else:
         print("denied request")
@@ -164,7 +326,7 @@ async def get_invite_result(context):
 
 
 
-async def send_prompt_message(user_target):
+async def send_prompt_message(user_target, prompt):
     print(f"\nsending a prompt message to user: {user_target}")
 
     try:
@@ -192,7 +354,7 @@ async def send_request_denial(user_target):
 
 
 
-async def sent_info_message(user_target, content):
+async def send_info_message(user_target, content):
     print(f"\nsending an info message to user: {user_target}")
 
     try:
@@ -224,78 +386,6 @@ async def get_role_members(context, role_name):
 
 
 
-# @bot.command()
-async def store_user(list_name, User, role):
-    # list_name = "Contacted_Users.json"
-    # User = context.author
-
-    with open(list_name, "r") as file:
-        try:
-            user_list = json.load(file)
-        except (FileNotFoundError, json.JSONDecodeError):
-            user_list = []
-
-    double_check = True
-
-    # User Data gets serialized (turned into a string), encrypted (turned into bytes and manipulated), and finally decoded (turned into text),
-    # so that it can then be written to the json file
-    user_data = [User.name, role, User.id]
-    encrypted_user_data = securityModule.encrypt(user_data)
-    for entry in user_list:
-        decrypted_entry = securityModule.decrypt(entry)
-
-        if user_data == decrypted_entry:
-            double_check = False
-
-    if double_check:
-        user_list.append(encrypted_user_data)
-
-    with open(list_name, "w") as file:
-        json.dump(user_list, file)
-
-
-
-async def read_list(list_name):
-    # list_name = "Contacted_Users.json"
-    # User = context.author
-
-    with open(list_name, "r") as file:
-        try:
-            user_list = json.load(file)
-        except (FileNotFoundError, json.JSONDecodeError):
-            user_list = []
-
-    # User Data gets encoded (turned into bytes), decrypted (turned into bytes and manipulated), and finally deserialized (turned into a list),
-    # so that it can then be read
-    decrypted_list = []
-    for entry in user_list:
-        decrypted_list.append(securityModule.decrypt(entry))
-
-    return decrypted_list
-
-
-# @bot.command()
-async def remove_user(list_name, User, role):
-    # list_name = "Contacted_Users.json"
-    # User = context.author
-
-    with open(list_name, "r") as file:
-        try:
-            user_list = json.load(file)
-        except (FileNotFoundError, json.JSONDecodeError):
-            user_list = []
-
-    user_data = [User.name, role, User.id]
-    for index, entry in enumerate(user_list):
-        decrypted_entry = securityModule.decrypt(entry)
-
-        if user_data == decrypted_entry:
-            del user_list[index]
-
-    with open(list_name, "w") as file:
-        json.dump(user_list, file)
-
-
 
 
 
@@ -325,32 +415,76 @@ async def get_user_reaction(message, reacting_user):
 
 
 # @bot.command()
-async def check_reaction(user):
+async def check_reaction(user, prompt):
     # prompt = "prompt placeholder owo"
     # user_data = context.author
 
     # user = await bot.fetch_user(user_data.id)
+    try:
+        dm_channel = await user.create_dm()
 
-    dm_channel = await user.create_dm()
+        # apparently the output of .history is an async iterator, therefore flatten
+        # chat_history = await dm_channel.history().filter(lambda m: m.author.id == bot.user.id).flatten()
+        chat_history = []
+        async for message in dm_channel.history():
+            chat_history.append(message)
 
-    # apparently the output of .history is an async iterator, therefore flatten
-    # chat_history = await dm_channel.history().filter(lambda m: m.author.id == bot.user.id).flatten()
-    chat_history = []
-    async for message in dm_channel.history():
-        chat_history.append(message)
+        # potential error, but shouldnt happen given the conditions to get on the list
+        for message in chat_history:
+            if message.content == prompt:
+                prompt_message = message
+                break
 
-    # potential error, but shouldnt happen given the conditions to get on the list
-    for message in chat_history:
-        if message.content == prompt:
-            prompt_message = message
-            break
+        user_reactions = await get_user_reaction(prompt_message, user)
 
-    user_reactions = await get_user_reaction(prompt_message, user)
+        if len(user_reactions) > 0:
+            print(f"User {user.name} reacted with emojis: {user_reactions}")
 
-    if len(user_reactions) > 0:
-        print(f"User {user.name} reacted with emojis: {user_reactions}")
+    except:
+        user_reactions = []
 
     return user_reactions
+
+
+
+
+
+
+# returns either empty list or list with one element
+async def check_response(user, prompt):
+
+    try:
+        dm_channel = await user.create_dm()
+
+        # apparently the output of .history is an async iterator, therefore flatten
+        # chat_history = await dm_channel.history().filter(lambda m: m.author.id == bot.user.id).flatten()
+        chat_history = []
+        async for message in dm_channel.history():
+            chat_history.append(message)
+
+        # potential error, but shouldnt happen given the conditions to get on the list
+        response_messages = []
+        response_index = -1
+        for index, message in enumerate(chat_history):
+            if (message.content == prompt) & (response_index == -1):
+
+                response_index = index - 1
+                while response_index >= 0:
+                    if chat_history[response_index].author.id == bot.user.id:
+                        response_index += -1
+                    else:
+                        break
+
+        if response_index >= 0:
+            response_messages.append(chat_history[response_index].content)
+
+        if len(response_messages) > 0:
+            print(f"User {user.name} responded with: {response_messages[0]}")
+
+    except:
+        response_messages = []
+
+    return response_messages
 
 
 
