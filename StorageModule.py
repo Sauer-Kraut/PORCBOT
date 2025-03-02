@@ -1,5 +1,8 @@
 import discord
 from discord.ext import tasks, commands
+from dataclasses import dataclass, asdict
+
+import DailogeModule
 import SecurityModule
 import json
 import os
@@ -8,6 +11,7 @@ securityModule = SecurityModule.SecurityModule()
 
 
 async def store_user(list_name, User, data):
+    # [username, data(BP), id]
     # list_name = "Contacted_Users.json"
     # User = context.author
 
@@ -33,11 +37,12 @@ async def store_user(list_name, User, data):
         user_list.append(encrypted_user_data)
 
     with open(list_name, "w") as file:
-        json.dump(user_list, file)
+        json.dump(user_list, file, indent=4)
 
 
 
 async def read_list(list_name):
+    # [username, data(BP), id]
     # list_name = "Contacted_Users.json"
     # User = context.author
 
@@ -100,6 +105,32 @@ async def read_list_no_id(list_name):
 
     return decrypted_list
 
+
+
+async def store_dialogue_builders(list_name, dialogue_builders):
+
+    with open(list_name, "r") as file:
+        try:
+            builder_list = json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError):
+            builder_list = []
+
+    with open(list_name, "w") as file:
+        json.dump([d.serialize() for d in dialogue_builders], file, indent=4)
+
+
+
+async def read_dialogue_builders(list_name):
+
+    with open(list_name, "r") as file:
+        try:
+            builder_list = json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError):
+            builder_list = []
+
+    deserialized_list = [DailogeModule.DialogueBuilder.deserialize(d) for d in builder_list]
+
+    return deserialized_list
 
 
 

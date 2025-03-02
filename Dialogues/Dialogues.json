@@ -1,0 +1,57 @@
+[
+    {
+        "dialogue_data": {
+            "kind": "SeasonLeap",
+            "user_id": 412067213898547201,
+            "data": {
+                "role": "DEV",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonLeap",
+            "user_id": 412067213898547201,
+            "data": {
+                "role": "DEV",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonLeap",
+            "user_id": 412067213898547201,
+            "data": {
+                "role": "DEV",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 412067213898547201,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 412067213898547201,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    }
+]
