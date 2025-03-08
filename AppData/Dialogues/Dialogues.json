@@ -386,5 +386,19 @@
             }
         },
         "current_index": 4
+    },
+    {
+        "dialogue_data": {
+            "kind": "MatchRequest",
+            "user_id": 306467062530965514,
+            "data": {
+                "challenger_id": 306467062530965514,
+                "event_id": null,
+                "league": "league",
+                "start_timestamp": 1741356000,
+                "opponent_id": 1002
+            }
+        },
+        "current_index": 0
     }
 ]

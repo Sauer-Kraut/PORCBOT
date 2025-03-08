@@ -1,10 +1,10 @@
 import discord
-from discord.ext import tasks, commands
+from discord.ext import tasks
 import SecurityModule
-import config as Config
 import DailogeModule as Dialogue
 import StorageModule as Storage
 import DiscordModule as Communication
+from src import config
 import ServerCommunicationModule as API
 from colorama import Fore, Style
 import json
@@ -13,12 +13,10 @@ from flask import Flask, request, jsonify
 import threading
 import asyncio
 
-from DialogueRoutes.SeasonLeap import LeapData
-
 # Setup security module for encryption and decryption
 securityModule = SecurityModule.SecurityModule()
 
-bot = Config.bot
+bot = config.bot
 
 app = Flask(__name__)
 
@@ -54,10 +52,10 @@ async def initiate_match_request(data):
     league = data['league']
 
     initiator = Dialogue.DialogueInitiator()
-    builder = await initiator.initiate_MatchRequest(user_id=306467062530965514, challenger_id=int(challenger_id), opponent_id=int(opponent_id), league="league", start_timestamp=int(start_timestamp))
-    builders = await Storage.read_dialogue_builders(list_name="Dialogues/Dialogues.json")
+    builder = await initiator.initiate_MatchRequest(user_id=int(opponent_id), challenger_id=int(challenger_id), opponent_id=int(opponent_id), league="league", start_timestamp=int(start_timestamp))
+    builders = await Storage.read_dialogue_builders(list_name="AppData/Dialogues/Dialogues.json")
     builders.append(builder)
-    await Storage.store_dialogue_builders(list_name="Dialogues/Dialogues.json", dialogue_builders=builders)
+    await Storage.store_dialogue_builders(list_name="AppData/Dialogues/Dialogues.json", dialogue_builders=builders)
 
 
 async def process_request(data):
@@ -69,11 +67,11 @@ async def request_handler():
     while True:
         await asyncio.sleep(5)  # Adjust polling interval as needed
 
-        if not os.path.exists(Config.REQUESTS_FILE):
+        if not os.path.exists(config.REQUESTS_FILE):
             continue
 
         try:
-            with open(Config.REQUESTS_FILE, "r", encoding="utf-8") as f:
+            with open(config.REQUESTS_FILE, "r", encoding="utf-8") as f:
                 recvRequests = json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
             recvRequests = []
@@ -84,7 +82,7 @@ async def request_handler():
             await process_request(first_request)
 
             # Save the updated list back to the file
-            with open(Config.REQUESTS_FILE, "w", encoding="utf-8") as f:
+            with open(config.REQUESTS_FILE, "w", encoding="utf-8") as f:
                 json.dump(recvRequests, f, indent=4)
 
 
@@ -98,14 +96,14 @@ async def dialogue_checker_loop():
 
     print(Fore.RESET + Style.NORMAL + "Checking up on running conversations OwO")
 
-    dialogue_builders = await Storage.read_dialogue_builders(list_name="Dialogues/Dialogues.json")
+    dialogue_builders = await Storage.read_dialogue_builders(list_name="AppData/Dialogues/Dialogues.json")
     await Storage.drop_dialogue_lock()
 
     for index in range(len(dialogue_builders)):
 
         try:
 
-            builders = await Storage.read_dialogue_builders(list_name="Dialogues/Dialogues.json")
+            builders = await Storage.read_dialogue_builders(list_name="AppData/Dialogues/Dialogues.json")
 
             updated_builders = []
             current_index = 0
@@ -114,7 +112,7 @@ async def dialogue_checker_loop():
                 if current_index == index:
 
                     dialogue = await builders[index].build()
-                    username = Config.bot.get_user(dialogue.dialogue_data.user_id).name
+                    username = config.bot.get_user(dialogue.dialogue_data.user_id).name
                     print(Fore.RESET + Style.NORMAL + f"\nchecking dialogue of type: " + Fore.RESET + Style.BRIGHT + f"{dialogue.dialogue_data.kind}" + Fore.RESET + Style.NORMAL + " with user: " + Fore.RESET + Style.BRIGHT + f"{username}")
                     await dialogue.check()
 
@@ -130,7 +128,7 @@ async def dialogue_checker_loop():
 
                 current_index += 1
 
-            await Storage.store_dialogue_builders(list_name="Dialogues/Dialogues.json", dialogue_builders=updated_builders)
+            await Storage.store_dialogue_builders(list_name="AppData/Dialogues/Dialogues.json", dialogue_builders=updated_builders)
 
         except Exception as e:
             print(Fore.RED + f"error occurred while checking dialogue: {e}")
@@ -194,7 +192,7 @@ async def CTA_season_leap(context):
         dialogue_initiator = Dialogue.DialogueInitiator()
         dialogue_builders = []
 
-        for role in Config.leap_roles:
+        for role in config.leap_roles:
 
             users = await Communication.get_role_members(context, role)
 
@@ -212,9 +210,9 @@ async def CTA_season_leap(context):
                     builder = await dialogue_initiator.initiate_SeasonLeap(user_id=user.id, role=role)
                     dialogue_builders.append(builder)
 
-        current_builders = await Storage.read_dialogue_builders(list_name=Config.dialogue_file_name)
+        current_builders = await Storage.read_dialogue_builders(list_name=config.dialogue_file_name)
         current_builders.extend(dialogue_builders)
-        await Storage.store_dialogue_builders(list_name=Config.dialogue_file_name, dialogue_builders=current_builders)
+        await Storage.store_dialogue_builders(list_name=config.dialogue_file_name, dialogue_builders=current_builders)
 
         dialogue_checker_loop.start()
 
@@ -234,9 +232,9 @@ async def get_leap_result(context):
         print(Fore.GREEN + Style.NORMAL + "request has been accepted")
 
         response = f"Leap results: " \
-                   f"\n**contacted:** \n{await Storage.read_list_no_id(Config.contacted_leap_file_name)} " \
-                   f"\n**declined:** \n{await Storage.read_list_no_id(Config.declined_leap_file_name)} " \
-                   f"\n**confirmed:** \n{await Storage.read_list_no_id(Config.remaining_leap_file_name)}"
+                   f"\n**contacted:** \n{await Storage.read_list_no_id(config.contacted_leap_file_name)} " \
+                   f"\n**declined:** \n{await Storage.read_list_no_id(config.declined_leap_file_name)} " \
+                   f"\n**confirmed:** \n{await Storage.read_list_no_id(config.remaining_leap_file_name)}"
 
         await Communication.send_info_message(context.author, response)
 
@@ -268,7 +266,7 @@ async def CTA_season_sign_up(context):
         excluded_users.extend(signed_up_user_ids)
 
         # for role in ["Bronze"]:
-        for role in Config.leap_roles:
+        for role in config.leap_roles:
 
             users = await Communication.get_role_members(context, role)
 
@@ -276,7 +274,7 @@ async def CTA_season_sign_up(context):
 
                 excluded_users.append(user.id)
 
-        for role in Config.sign_up_roles:
+        for role in config.sign_up_roles:
 
             users = {user.id for user in await Communication.get_role_members(context, role)}
             included_users = [user for user in users if user not in excluded_users]
@@ -286,9 +284,9 @@ async def CTA_season_sign_up(context):
                 builder = await dialogue_initiator.initiate_SeasonInvite(user_id=user)
                 dialogue_builders.append(builder)
 
-        current_builders = await Storage.read_dialogue_builders(list_name=Config.dialogue_file_name)
+        current_builders = await Storage.read_dialogue_builders(list_name=config.dialogue_file_name)
         current_builders.extend(dialogue_builders)
-        await Storage.store_dialogue_builders(list_name=Config.dialogue_file_name, dialogue_builders=current_builders)
+        await Storage.store_dialogue_builders(list_name=config.dialogue_file_name, dialogue_builders=current_builders)
 
         dialogue_checker_loop.start()
 
@@ -311,10 +309,10 @@ async def get_sign_up_result(context):
         print(Fore.GREEN + Style.NORMAL + "request has been accepted")
 
         response = f"Invite results: " \
-                   f"\n**didn't respond**: \n{await Storage.read_list_no_id(Config.contacted_invite_file_name)}" \
-                   f"\n**declined**: \n{await Storage.read_list_no_id(Config.declined_invite_file_name)}" \
-                   f"\n**pending BP answer**: \n{await Storage.read_list_no_id(Config.pending_invite_file_name)}" \
-                   f"\n**confirmed:** \n{await Storage.read_list_no_id(Config.confirmed_invite_file_name)} "
+                   f"\n**didn't respond**: \n{await Storage.read_list_no_id(config.contacted_invite_file_name)}" \
+                   f"\n**declined**: \n{await Storage.read_list_no_id(config.declined_invite_file_name)}" \
+                   f"\n**pending BP answer**: \n{await Storage.read_list_no_id(config.pending_invite_file_name)}" \
+                   f"\n**confirmed:** \n{await Storage.read_list_no_id(config.confirmed_invite_file_name)} "
 
         await Communication.send_info_message(context.author, response)
 
@@ -370,7 +368,7 @@ async def send_json(context):
     user = context.author
 
     # 2. Save the data to a JSON file
-    filename = "MatchPlanBlueprint.json"
+    filename = "./AppData/MatchPlanBlueprint.json"
     with open(filename, "w") as file:
         json.dump(data, file, indent=4)
 
@@ -440,24 +438,24 @@ async def dialogue_tester(context):
     print(builder)
     await dialogue.check()
     await Storage.get_dialogue_lock()
-    await Storage.store_dialogue_builders(list_name="Dialogues/Dialogues.json", dialogue_builders=[dialogue.getBuilder()])
-    print(await Storage.read_dialogue_builders(list_name="Dialogues/Dialogues.json"))
+    await Storage.store_dialogue_builders(list_name="AppData/Dialogues/Dialogues.json", dialogue_builders=[dialogue.getBuilder()])
+    print(await Storage.read_dialogue_builders(list_name="AppData/Dialogues/Dialogues.json"))
     await Storage.drop_dialogue_lock()
 
 
 
 @bot.command()
 async def event_tester(context):
-    await Communication.create_event(start_timestamp=1741028400, channel_id=Config.stage_channel_ids[0], name="test event", description="something exiting is cooking")
+    await Communication.create_event(start_timestamp=1741028400, channel_id=config.stage_channel_ids[0], name="test event", description="something exiting is cooking")
 
 
 @bot.command()
 async def match_request_tester(context):
     initiator = Dialogue.DialogueInitiator()
     builder = await initiator.initiate_MatchRequest(user_id=context.author.id, challenger_id=178905571682942976, opponent_id=306467062530965514, league="Meteorite", start_timestamp=1741460400)
-    builders = await Storage.read_dialogue_builders(list_name="Dialogues/Dialogues.json")
+    builders = await Storage.read_dialogue_builders(list_name="AppData/Dialogues/Dialogues.json")
     builders.append(builder)
-    await Storage.store_dialogue_builders(list_name="Dialogues/Dialogues.json", dialogue_builders=builders)
+    await Storage.store_dialogue_builders(list_name="AppData/Dialogues/Dialogues.json", dialogue_builders=builders)
 
 
 

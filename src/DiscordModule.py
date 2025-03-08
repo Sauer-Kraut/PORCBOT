@@ -1,14 +1,5 @@
 import discord
-from discord.ext import tasks, commands
-import SecurityModule
-import config as Config
-import DailogeModule as Dialogue
-import StorageModule as Storage
-import DiscordModule as Communication
-import ServerCommunicationModule as API
 from colorama import Fore, Style
-import json
-import os
 from datetime import datetime, timezone, timedelta
 import random
 
@@ -186,7 +177,7 @@ async def check_response(user, prompt: str):
 
                 response_index = index - 1
                 while response_index >= 0:
-                    if chat_history[response_index].author.id == Config.bot.user.id:
+                    if chat_history[response_index].author.id == config.bot.user.id:
                         response_index += -1
                     else:
                         break
@@ -209,7 +200,7 @@ async def check_response(user, prompt: str):
 
 async def create_event(start_timestamp: int, channel_id: int, name: str, description: str):
 
-    guild = Config.bot.get_guild(Config.porc_guild_id)
+    guild = config.bot.get_guild(config.porc_guild_id)
     channel = guild.get_channel(channel_id)
 
     # Check if the provided channel is valid
@@ -248,7 +239,7 @@ async def create_event(start_timestamp: int, channel_id: int, name: str, descrip
 async def create_match_event(start_timestamp: int, challenger_username: str, opponent_username: str, league: str):
 
     event_name = f"[{league}] {challenger_username} vs. {opponent_username}"
-    channel_id = Config.stage_channel_ids[random.randint(0, 2)]
+    channel_id = config.stage_channel_ids[random.randint(0, 2)]
     description = ""
 
     return await create_event(start_timestamp=start_timestamp, channel_id=channel_id, description=description, name=event_name)

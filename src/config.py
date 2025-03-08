@@ -13,16 +13,16 @@ When you are done you can commit your plan via !start_new_season with the file a
 accept_emoji = "✅"
 decline_emoji = "❌"
 
-contacted_leap_file_name = "season_leaps/Contacted_Users.json"
-remaining_leap_file_name = "season_leaps/Remaining_Users.json"
-declined_leap_file_name = "season_leaps/Declining_Users.json"
+contacted_leap_file_name = "./AppData/season_leaps/Contacted_Users.json"
+remaining_leap_file_name = "./AppData/season_leaps/Remaining_Users.json"
+declined_leap_file_name = "./AppData/season_leaps/Declining_Users.json"
 
-contacted_invite_file_name = r"season_invites\Invited_Users.json"
-pending_invite_file_name = r"season_invites\Pending_Confirms.json"
-confirmed_invite_file_name = r"season_invites\Confirmed_Users.json"
-declined_invite_file_name = r"season_invites\Declined_Invites.json"
+contacted_invite_file_name = r"./AppData/season_invites/Invited_Users.json"
+pending_invite_file_name = r"./AppData/season_invites/Pending_Confirms.json"
+confirmed_invite_file_name = r"./AppData/season_invites/Confirmed_Users.json"
+declined_invite_file_name = r"./AppData/season_invites/Declined_Invites.json"
 
-dialogue_file_name = r"Dialogues/Dialogues.json"
+dialogue_file_name = r"./AppData/Dialogues/Dialogues.json"
 
 leap_roles = ["Meteorite", "Malachite", "Adamantium", "Mithril", "Platinum", "Diamond", "Gold", "Silver", "Bronze", "Steel", "Copper", "Iron", "Stone"]
 # leap_roles = ["DEV"]
@@ -40,4 +40,4 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 porc_guild_id = 1264474928095297536
 stage_channel_ids = [1280230793041674291, 1280231416918970389, 1280231175549489263]
 
-REQUESTS_FILE = "requests.json"
+REQUESTS_FILE = "./AppData/requests.json"

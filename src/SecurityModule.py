@@ -2,6 +2,7 @@ import os
 import pickle
 import json
 from cryptography.fernet import Fernet
+from src import config
 
 class SecurityModule:
     def __init__(self):
@@ -23,7 +24,7 @@ class SecurityModule:
 
     @staticmethod
     def get_key():
-        filepath = os.path.join("secrets", "secret_key.key")
+        filepath = os.path.join("./secrets", "secret_key.key")
         if os.path.exists(filepath):
             return open(filepath, 'rb').read()
         else:

@@ -1,16 +1,8 @@
-import discord
-from discord.ext import tasks, commands
-import SecurityModule
-import config as Config
-import StorageModule as Storage
-import ServerCommunicationModule as API
-from colorama import Fore, Style
-import json
-import os
+from src import StorageModule as Storage, ServerCommunicationModule as API
+from src import config
+from src.DailogeModule import DialoguePlan, DialogueStep
 
-from DailogeModule import DialoguePlan, DialogueData, DialogueStep, LeapData, InviteData
-
-bot = Config.bot
+bot = config.bot
 
 
 async def completion_script_0():
@@ -20,17 +12,17 @@ async def completion_script_0():
             return [-1, dialogue_data]
 
         elif approval:
-            await Storage.store_user(Config.pending_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
-            await Storage.remove_user(Config.declined_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
-            await Storage.remove_user(Config.confirmed_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
-            await Storage.remove_user(Config.contacted_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
+            await Storage.store_user(config.pending_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
+            await Storage.remove_user(config.declined_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
+            await Storage.remove_user(config.confirmed_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
+            await Storage.remove_user(config.contacted_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
             return [1, dialogue_data]
 
         else:
-            await Storage.store_user(Config.declined_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
-            await Storage.remove_user(Config.pending_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
-            await Storage.remove_user(Config.confirmed_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
-            await Storage.remove_user(Config.contacted_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
+            await Storage.store_user(config.declined_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
+            await Storage.remove_user(config.pending_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
+            await Storage.remove_user(config.confirmed_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
+            await Storage.remove_user(config.contacted_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
             return [2, dialogue_data]
 
     return evaluator
@@ -58,14 +50,14 @@ async def completion_script_1():
         # print("completion script end executing")
         dialogue_data.data.bp = response
 
-        result = await API.sign_up_user(user=Config.bot.get_user(dialogue_data.user_id), bp=response, region="NaN")
+        result = await API.sign_up_user(user=config.bot.get_user(dialogue_data.user_id), bp=response, region="NaN")
         dialogue_data.data.sign_up_error = result
 
         if result is None or "Similar Sign Up already exists" in result:
-            await Storage.store_user(Config.confirmed_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
-            await Storage.remove_user(Config.declined_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
-            await Storage.remove_user(Config.pending_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
-            await Storage.remove_user(Config.contacted_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
+            await Storage.store_user(config.confirmed_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
+            await Storage.remove_user(config.declined_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
+            await Storage.remove_user(config.pending_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
+            await Storage.remove_user(config.contacted_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
             return [3, dialogue_data]
 
         else:

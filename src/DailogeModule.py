@@ -1,15 +1,6 @@
-import discord
-from discord.ext import tasks, commands
 import DiscordModule as Communication
-import config as Config
-import SecurityModule
 import StorageModule as Storage
-import ServerCommunicationModule as API
-from colorama import Fore, Style
-import json
-import os
-
-import DialogueRoutes
+from src import config
 
 
 class DialoguePlan:
@@ -38,10 +29,10 @@ class DialoguePlan:
             print("A dialogue has reached its end")
 
         elif self.steps[target_index].completion_condition == "react":
-            await Communication.send_prompt_message(Config.bot.get_user(self.dialogue_data.user_id), await self.steps[target_index].get_message(self.dialogue_data))
+            await Communication.send_prompt_message(config.bot.get_user(self.dialogue_data.user_id), await self.steps[target_index].get_message(self.dialogue_data))
 
         else:
-            await Communication.send_info_message(Config.bot.get_user(self.dialogue_data.user_id), await self.steps[target_index].get_message(self.dialogue_data))
+            await Communication.send_info_message(config.bot.get_user(self.dialogue_data.user_id), await self.steps[target_index].get_message(self.dialogue_data))
 
     def getBuilder(self):
         return DialogueBuilder(dialogue_data=self.dialogue_data, current_index=self.index)
@@ -63,7 +54,7 @@ class DialogueStep:
 
         if self.completion_condition == "response":
             # print("checking for 'response' type")
-            response = await Communication.check_response(Config.bot.get_user(dialogue_data.user_id), await self.get_message(dialogue_data=dialogue_data))
+            response = await Communication.check_response(config.bot.get_user(dialogue_data.user_id), await self.get_message(dialogue_data=dialogue_data))
             if len(response) > 0:
                 return await self.completion_script(dialogue_data=dialogue_data, response=response[0][0])
 
@@ -73,7 +64,7 @@ class DialogueStep:
 
         elif self.completion_condition == "react":
             # print("checking for 'react' type")
-            reactions = await Communication.check_reaction(Config.bot.get_user(dialogue_data.user_id), await self.get_message(dialogue_data=dialogue_data))
+            reactions = await Communication.check_reaction(config.bot.get_user(dialogue_data.user_id), await self.get_message(dialogue_data=dialogue_data))
             approval = False
             decline = False
             for reaction in reactions:
@@ -277,12 +268,12 @@ class DialogueInitiator:
         message = await plan.steps[0].get_message(plan.dialogue_data)
 
         if plan.steps[0].completion_condition == "react":
-            await Communication.send_prompt_message(Config.bot.get_user(user_id), message)
+            await Communication.send_prompt_message(config.bot.get_user(user_id), message)
 
         else:
-            await Communication.send_info_message(Config.bot.get_user(user_id), message)
+            await Communication.send_info_message(config.bot.get_user(user_id), message)
 
-        await Storage.store_user(Config.contacted_leap_file_name, Config.bot.get_user(user_id), role)
+        await Storage.store_user(config.contacted_leap_file_name, config.bot.get_user(user_id), role)
 
         return builder
 
@@ -304,12 +295,12 @@ class DialogueInitiator:
         message = await plan.steps[0].get_message(plan.dialogue_data)
 
         if plan.steps[0].completion_condition == "react":
-            await Communication.send_prompt_message(Config.bot.get_user(user_id), message)
+            await Communication.send_prompt_message(config.bot.get_user(user_id), message)
 
         else:
-            await Communication.send_info_message(Config.bot.get_user(user_id), message)
+            await Communication.send_info_message(config.bot.get_user(user_id), message)
 
-        await Storage.store_user(Config.contacted_invite_file_name, Config.bot.get_user(user_id), "NaN")
+        await Storage.store_user(config.contacted_invite_file_name, config.bot.get_user(user_id), "NaN")
 
         return builder
 
@@ -334,9 +325,9 @@ class DialogueInitiator:
         message = await plan.steps[0].get_message(plan.dialogue_data)
 
         if plan.steps[0].completion_condition == "react":
-            await Communication.send_prompt_message(Config.bot.get_user(user_id), message)
+            await Communication.send_prompt_message(config.bot.get_user(user_id), message)
 
         else:
-            await Communication.send_info_message(Config.bot.get_user(user_id), message)
+            await Communication.send_info_message(config.bot.get_user(user_id), message)
 
         return builder

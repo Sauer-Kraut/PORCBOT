@@ -1,16 +1,8 @@
-import discord
-from discord.ext import tasks, commands
-import SecurityModule
-import config as Config
-import StorageModule as Storage
-import ServerCommunicationModule as API
-from colorama import Fore, Style
-import json
-import os
+from src import StorageModule as Storage, ServerCommunicationModule as API
+from src import config
+from src.DailogeModule import DialoguePlan, DialogueStep
 
-from DailogeModule import DialoguePlan, DialogueData, DialogueStep, LeapData
-
-bot = Config.bot
+bot = config.bot
 
 
 async def completion_script_0():
@@ -20,11 +12,11 @@ async def completion_script_0():
             return [-1, dialogue_data]
 
         elif approval:
-            await Storage.store_user(Config.remaining_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
-            await Storage.remove_user(Config.contacted_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
-            await Storage.remove_user(Config.declined_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
+            await Storage.store_user(config.remaining_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
+            await Storage.remove_user(config.contacted_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
+            await Storage.remove_user(config.declined_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
 
-            result = await API.sign_up_user(user=Config.bot.get_user(dialogue_data.user_id), bp="NaN", region="NaN")
+            result = await API.sign_up_user(user=config.bot.get_user(dialogue_data.user_id), bp="NaN", region="NaN")
 
             if result is None:
                 return [1, dialogue_data]
@@ -38,9 +30,9 @@ async def completion_script_0():
                 return [3, dialogue_data]
 
         else:
-            await Storage.store_user(Config.declined_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
-            await Storage.remove_user(Config.contacted_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
-            await Storage.remove_user(Config.remaining_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
+            await Storage.store_user(config.declined_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
+            await Storage.remove_user(config.contacted_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
+            await Storage.remove_user(config.remaining_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
             return [2, dialogue_data]
 
     return evaluator

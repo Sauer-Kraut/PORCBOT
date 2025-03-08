@@ -1,13 +1,9 @@
-import discord
-from discord.ext import tasks, commands
-from dataclasses import dataclass, asdict
 import asyncio
 import DailogeModule
 import SecurityModule
 import json
-import os
 import threading
-import config as Config
+from src import config
 
 securityModule = SecurityModule.SecurityModule()
 
@@ -159,14 +155,14 @@ def write_request_to_file(data):
     """Append request data to the JSON file."""
     with FILE_LOCK:
         try:
-            with open(Config.REQUESTS_FILE, "r+", encoding="utf-8") as f:
+            with open(config.REQUESTS_FILE, "r+", encoding="utf-8") as f:
                 requests = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             requests = []
 
         requests.append(data)  # Add new request
 
-        with open(Config.REQUESTS_FILE, "w", encoding="utf-8") as f:
+        with open(config.REQUESTS_FILE, "w", encoding="utf-8") as f:
             json.dump(requests, f, indent=4)
 
 

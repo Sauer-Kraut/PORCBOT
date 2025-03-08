@@ -1,17 +1,8 @@
-import discord
-from discord.ext import tasks, commands
-import SecurityModule
-import config as Config
-import StorageModule as Storage
-import ServerCommunicationModule as API
-import DiscordModule as Communication
-from colorama import Fore, Style
-import json
-import os
+from src import DiscordModule as Communication, ServerCommunicationModule as API
+from src import config
+from src.DailogeModule import DialoguePlan, DialogueStep
 
-from DailogeModule import DialoguePlan, DialogueData, DialogueStep, LeapData, InviteData, MatchRequestData
-
-bot = Config.bot
+bot = config.bot
 
 
 async def completion_script_0():
@@ -48,15 +39,15 @@ async def completion_script_0():
             if error is None:
 
                 event = await Communication.create_match_event(start_timestamp=dialogue_data.data.start_timestamp,
-                                                               challenger_username=Config.bot.get_user(dialogue_data.data.challenger_id).display_name,
-                                                               opponent_username=Config.bot.get_user(dialogue_data.data.opponent_id).display_name,
+                                                               challenger_username=config.bot.get_user(dialogue_data.data.challenger_id).display_name,
+                                                               opponent_username=config.bot.get_user(dialogue_data.data.opponent_id).display_name,
                                                                league=dialogue_data.data.league)
 
                 dialogue_data.data.event_id = event.id
 
-                event_link = f"https://discord.com/events/{Config.porc_guild_id}/{event.id}"
-                await Communication.send_info_message(user_target=Config.bot.get_user(dialogue_data.data.challenger_id),
-                                                      content=f'''Your requested match with {Config.bot.get_user(dialogue_data.data.opponent_id).display_name} has been accepted:
+                event_link = f"https://discord.com/events/{config.porc_guild_id}/{event.id}"
+                await Communication.send_info_message(user_target=config.bot.get_user(dialogue_data.data.challenger_id),
+                                                      content=f'''Your requested match with {config.bot.get_user(dialogue_data.data.opponent_id).display_name} has been accepted:
 {event_link}''')
 
                 return [1, dialogue_data]
@@ -82,10 +73,10 @@ async def completion_script_0():
 
 async def message_script_0():
     async def constructor(dialogue_data):
-        challenger = Config.bot.get_user(dialogue_data.data.challenger_id).display_name
+        challenger = config.bot.get_user(dialogue_data.data.challenger_id).display_name
         message = f'''
 **{challenger} has requested a match with you on <t:{dialogue_data.data.start_timestamp}:F>**. 
-You can accept his proposal via reacting with {Config.accept_emoji} or decline with {Config.decline_emoji}.
+You can accept his proposal via reacting with {config.accept_emoji} or decline with {config.decline_emoji}.
         '''.strip()
         return message
 
@@ -94,7 +85,7 @@ You can accept his proposal via reacting with {Config.accept_emoji} or decline w
 
 async def message_script_1():
     async def constructor(dialogue_data):
-        event_link = f"https://discord.com/events/{Config.porc_guild_id}/{dialogue_data.data.event_id}"
+        event_link = f"https://discord.com/events/{config.porc_guild_id}/{dialogue_data.data.event_id}"
         message = f'''Your match has been registered successfully. An event has been created on the PORC discord server ^^: {event_link}'''.strip()
         return message
 
@@ -143,15 +134,15 @@ async def completion_script_4():
             print(f"challenger id: {dialogue_data.data.challenger_id}, opponent id: {dialogue_data.data.opponent_id}")
 
             event = await Communication.create_match_event(start_timestamp=dialogue_data.data.start_timestamp,
-                                                           challenger_username=Config.bot.get_user(dialogue_data.data.challenger_id).display_name,
-                                                           opponent_username=Config.bot.get_user(dialogue_data.data.opponent_id).display_name,
+                                                           challenger_username=config.bot.get_user(dialogue_data.data.challenger_id).display_name,
+                                                           opponent_username=config.bot.get_user(dialogue_data.data.opponent_id).display_name,
                                                            league=dialogue_data.data.league)
 
             dialogue_data.data.event_id = event.id
 
-            event_link = f"https://discord.com/events/{Config.porc_guild_id}/{event.id}"
-            await Communication.send_info_message(user_target=Config.bot.get_user(dialogue_data.data.challenger_id),
-                                                  content=f'''Your requested match with {Config.bot.get_user(dialogue_data.data.opponent_id).display_name} has been accepted:
+            event_link = f"https://discord.com/events/{config.porc_guild_id}/{event.id}"
+            await Communication.send_info_message(user_target=config.bot.get_user(dialogue_data.data.challenger_id),
+                                                  content=f'''Your requested match with {config.bot.get_user(dialogue_data.data.opponent_id).display_name} has been accepted:
         {event_link}''')
 
             return [1, dialogue_data]
