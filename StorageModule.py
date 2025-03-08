@@ -1,11 +1,13 @@
 import discord
 from discord.ext import tasks, commands
 from dataclasses import dataclass, asdict
-
+import asyncio
 import DailogeModule
 import SecurityModule
 import json
 import os
+import threading
+import config as Config
 
 securityModule = SecurityModule.SecurityModule()
 
@@ -106,8 +108,22 @@ async def read_list_no_id(list_name):
     return decrypted_list
 
 
+dialogue_lock = False
+
+async def get_dialogue_lock():
+    # print("getting lock")
+    global dialogue_lock
+    while dialogue_lock is True:
+        await asyncio.sleep(0.1)
+    dialogue_lock = True
+
+async def drop_dialogue_lock():
+    # print("dropping lock")
+    global dialogue_lock
+    dialogue_lock = False
 
 async def store_dialogue_builders(list_name, dialogue_builders):
+    # print("storing")
 
     with open(list_name, "r") as file:
         try:
@@ -118,9 +134,13 @@ async def store_dialogue_builders(list_name, dialogue_builders):
     with open(list_name, "w") as file:
         json.dump([d.serialize() for d in dialogue_builders], file, indent=4)
 
+    await drop_dialogue_lock()
+
 
 
 async def read_dialogue_builders(list_name):
+    # print("reading")
+    await get_dialogue_lock()
 
     with open(list_name, "r") as file:
         try:
@@ -131,6 +151,23 @@ async def read_dialogue_builders(list_name):
     deserialized_list = [DailogeModule.DialogueBuilder.deserialize(d) for d in builder_list]
 
     return deserialized_list
+
+
+
+FILE_LOCK = threading.Lock()
+def write_request_to_file(data):
+    """Append request data to the JSON file."""
+    with FILE_LOCK:
+        try:
+            with open(Config.REQUESTS_FILE, "r+", encoding="utf-8") as f:
+                requests = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            requests = []
+
+        requests.append(data)  # Add new request
+
+        with open(Config.REQUESTS_FILE, "w", encoding="utf-8") as f:
+            json.dump(requests, f, indent=4)
 
 
 

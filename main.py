@@ -9,6 +9,9 @@ import ServerCommunicationModule as API
 from colorama import Fore, Style
 import json
 import os
+from flask import Flask, request, jsonify
+import threading
+import asyncio
 
 from DialogueRoutes.SeasonLeap import LeapData
 
@@ -17,47 +20,142 @@ securityModule = SecurityModule.SecurityModule()
 
 bot = Config.bot
 
+app = Flask(__name__)
+
 token = os.getenv("PORC_TOKEN")
 
 
-@tasks.loop(minutes=3)
+
+
+def run_flask():
+    app.run(debug=False, host='127.0.0.1', port=8085)
+
+
+
+@app.route('/porcbot/event', methods=['PUT'])
+def plan_event():
+    print("received plan event put request")
+    try:
+        # Get data from POST request
+        data = request.get_json()
+        Storage.write_request_to_file(data)
+
+        print("Event planing started successfully!")
+        return jsonify({"message": f"Event planing started successfully!"}), 200
+    except Exception as e:
+        print(Fore.RED + f"error occurred: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+async def initiate_match_request(data):
+    start_timestamp = data['start_timestamp']
+    challenger_id = data['challenger_id']
+    opponent_id = data['opponent_id']
+    league = data['league']
+
+    initiator = Dialogue.DialogueInitiator()
+    builder = await initiator.initiate_MatchRequest(user_id=306467062530965514, challenger_id=int(challenger_id), opponent_id=int(opponent_id), league="league", start_timestamp=int(start_timestamp))
+    builders = await Storage.read_dialogue_builders(list_name="Dialogues/Dialogues.json")
+    builders.append(builder)
+    await Storage.store_dialogue_builders(list_name="Dialogues/Dialogues.json", dialogue_builders=builders)
+
+
+async def process_request(data):
+    await initiate_match_request(data)
+    print(f"Processed request: {data}")
+
+async def request_handler():
+    """Continuously check for new requests in the file."""
+    while True:
+        await asyncio.sleep(5)  # Adjust polling interval as needed
+
+        if not os.path.exists(Config.REQUESTS_FILE):
+            continue
+
+        try:
+            with open(Config.REQUESTS_FILE, "r", encoding="utf-8") as f:
+                recvRequests = json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            recvRequests = []
+
+        if recvRequests:
+            first_request = recvRequests.pop(0)  # Get the first request
+
+            await process_request(first_request)
+
+            # Save the updated list back to the file
+            with open(Config.REQUESTS_FILE, "w", encoding="utf-8") as f:
+                json.dump(recvRequests, f, indent=4)
+
+
+
+checking_dialogues = False
+
+@tasks.loop(minutes=6)
 async def dialogue_checker_loop():
+    global checking_dialogues
+    checking_dialogues = True
 
     print(Fore.RESET + Style.NORMAL + "Checking up on running conversations OwO")
 
     dialogue_builders = await Storage.read_dialogue_builders(list_name="Dialogues/Dialogues.json")
-    updated_dialogues = []
+    await Storage.drop_dialogue_lock()
 
-    for dialogue_builder in dialogue_builders:
+    for index in range(len(dialogue_builders)):
 
-        dialogue = await dialogue_builder.build()
-        username = Config.bot.get_user(dialogue.dialogue_data.user_id).name
-        print(Fore.RESET + Style.NORMAL + f"\nchecking dialogue of type: " + Fore.RESET + Style.BRIGHT + f"{dialogue.dialogue_data.kind}" + Fore.RESET + Style.NORMAL + " with user: " + Fore.RESET + Style.BRIGHT + f"{username}")
-        await dialogue.check()
+        try:
 
-        if dialogue.index != 600:
+            builders = await Storage.read_dialogue_builders(list_name="Dialogues/Dialogues.json")
 
-            updated_dialogues.append(dialogue.getBuilder())
+            updated_builders = []
+            current_index = 0
+            for builder in builders:
 
-        else:
+                if current_index == index:
 
-            print(Fore.RESET + Style.NORMAL + f"Finished a dialogue")
+                    dialogue = await builders[index].build()
+                    username = Config.bot.get_user(dialogue.dialogue_data.user_id).name
+                    print(Fore.RESET + Style.NORMAL + f"\nchecking dialogue of type: " + Fore.RESET + Style.BRIGHT + f"{dialogue.dialogue_data.kind}" + Fore.RESET + Style.NORMAL + " with user: " + Fore.RESET + Style.BRIGHT + f"{username}")
+                    await dialogue.check()
 
-    await Storage.store_dialogue_builders(list_name="Dialogues/Dialogues.json", dialogue_builders=updated_dialogues)
+                    # will cause the following builder to get skipped for his check in case of finish but not to tragic since it repeats all 6 minutes
+                    if dialogue.index != 600:
+                        updated_builders.append(dialogue.getBuilder())
+
+                    else:
+                        print(Fore.RESET + Style.NORMAL + f"Finished a dialogue")
+
+                else:
+                    updated_builders.append(builder)
+
+                current_index += 1
+
+            await Storage.store_dialogue_builders(list_name="Dialogues/Dialogues.json", dialogue_builders=updated_builders)
+
+        except Exception as e:
+            print(Fore.RED + f"error occurred while checking dialogue: {e}")
+            await Storage.drop_dialogue_lock()
+
+    checking_dialogues = False
 
 
 # Event: when the bot is ready
 @bot.event
 async def on_ready():
+    print(Fore.RED + Style.BRIGHT + "WARNING: ignore the other guys warning, I know what Im doing")
     print(Fore.RESET + Style.BRIGHT + f"{bot.user} is now online! OwO")
     dialogue_checker_loop.start()
+    bot.loop.create_task(request_handler())
 
 
 @bot.event
 async def on_reaction_add(reaction, user):
+    global checking_dialogues
     if user.id != bot.user.id:
         try:
-            dialogue_checker_loop.restart()
+            print("received reaction")
+            if checking_dialogues is not True:
+                dialogue_checker_loop.restart()
 
         except:
             print(Fore.RED + Style.NORMAL + "\ncouldn't restart a loop\n")
@@ -65,12 +163,15 @@ async def on_reaction_add(reaction, user):
 
 @bot.event
 async def on_message(message):
+    global checking_dialogues
     if message.author.id != bot.user.id:
 
         # checks if message is dm
         if isinstance(message.channel, discord.DMChannel):
+            print("received message")
             try:
-                dialogue_checker_loop.restart()
+                if checking_dialogues is not True:
+                    dialogue_checker_loop.restart()
             except:
                 print(Fore.RED + Style.NORMAL + "\ncouldn't restart a loop\n")
 
@@ -98,7 +199,7 @@ async def CTA_season_leap(context):
             users = await Communication.get_role_members(context, role)
 
             if len(users) < 1:
-                print(Fore.YELLOW + Style.NORMAL + "no members of the following role were messaged: {role}")
+                print(Fore.YELLOW + Style.NORMAL + f"no members of the following role were messaged: {role}")
 
             else:
                 print(f"{len(users)} members of the following role were messaged: {role}")
@@ -159,31 +260,30 @@ async def CTA_season_sign_up(context):
         dialogue_checker_loop.cancel()
 
         excluded_users = []
-        signed_up_user_ids = await API.get_signed_up_ids()
+        signed_up_user_ids = {int(user_id) for user_id in await API.get_signed_up_ids()}
 
         dialogue_initiator = Dialogue.DialogueInitiator()
         dialogue_builders = []
 
-        for signup in signed_up_user_ids:
+        excluded_users.extend(signed_up_user_ids)
 
-            user = Config.bot.get_user(signup)
-            excluded_users.append(user)
-
-
-        # for role in Config.leap_roles:
-        for role in ["Bronze"]:
+        # for role in ["Bronze"]:
+        for role in Config.leap_roles:
 
             users = await Communication.get_role_members(context, role)
-            excluded_users.extend(users)
+
+            for user in users:
+
+                excluded_users.append(user.id)
 
         for role in Config.sign_up_roles:
 
-            users = await Communication.get_role_members(context, role)
+            users = {user.id for user in await Communication.get_role_members(context, role)}
             included_users = [user for user in users if user not in excluded_users]
 
             for user in included_users:
 
-                builder = await dialogue_initiator.initiate_SeasonInvite(user_id=user.id)
+                builder = await dialogue_initiator.initiate_SeasonInvite(user_id=user)
                 dialogue_builders.append(builder)
 
         current_builders = await Storage.read_dialogue_builders(list_name=Config.dialogue_file_name)
@@ -339,8 +439,32 @@ async def dialogue_tester(context):
     dialogue = await builder.build()
     print(builder)
     await dialogue.check()
+    await Storage.get_dialogue_lock()
     await Storage.store_dialogue_builders(list_name="Dialogues/Dialogues.json", dialogue_builders=[dialogue.getBuilder()])
     print(await Storage.read_dialogue_builders(list_name="Dialogues/Dialogues.json"))
+    await Storage.drop_dialogue_lock()
+
+
+
+@bot.command()
+async def event_tester(context):
+    await Communication.create_event(start_timestamp=1741028400, channel_id=Config.stage_channel_ids[0], name="test event", description="something exiting is cooking")
+
+
+@bot.command()
+async def match_request_tester(context):
+    initiator = Dialogue.DialogueInitiator()
+    builder = await initiator.initiate_MatchRequest(user_id=context.author.id, challenger_id=178905571682942976, opponent_id=306467062530965514, league="Meteorite", start_timestamp=1741460400)
+    builders = await Storage.read_dialogue_builders(list_name="Dialogues/Dialogues.json")
+    builders.append(builder)
+    await Storage.store_dialogue_builders(list_name="Dialogues/Dialogues.json", dialogue_builders=builders)
+
+
+
+@bot.command()
+async def match_status_tester(context):
+    match_id = "1002V306467062530965514@1741348800"
+    res = await API.get_match_status(match_id)
 
 
 
@@ -350,6 +474,7 @@ async def dialogue_tester(context):
 
 
 
-
+flask_thread = threading.Thread(target=run_flask)
+flask_thread.start()
 
 bot.run(token)

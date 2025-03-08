@@ -3,6 +3,9 @@ from discord.ext import tasks, commands
 import SecurityModule
 import StorageModule as Storage
 from colorama import Fore, Style
+import asyncio
+import config as Config
+import json
 import os
 import requests
 import re
@@ -191,3 +194,81 @@ async def post_plan_blueprint(plan):
 
     else:
         print(Fore.RED + Style.NORMAL + f"API call failed with status code {response.status_code}.")
+
+
+
+async def update_match_status(start_timestamp: int, challenger_id: int, opponent_id: int, status: str):
+
+    print(f"\nUpdating a match event via API")
+
+    # target_url = "https://porc.mywire.org/api/matches/set"
+    target_url = "http://localhost:8082/api/matches/set"
+
+    payload = {
+        "title": "Discord Bot match event update",
+        "match_event": {
+            "start_timestamp": start_timestamp,
+            "initiator_id": f"{challenger_id}",
+            "opponent_id": f"{opponent_id}",
+            "status": status
+        }
+    }
+
+    response = requests.post(target_url, json=payload)
+
+    if response.status_code == 200:
+
+        print(f"\ngot response with code 200")
+
+        data = response.json()
+        error = data['error']
+
+        if f"{error}" == "None":
+            print(Fore.GREEN + Style.NORMAL + "match event update POST request successful!")
+            return None
+
+        else:
+            print(Fore.YELLOW + Style.NORMAL + f"API call failed with error message {error}.")
+            return error
+
+    else:
+        print(Fore.RED + Style.NORMAL + f"API call failed with status code {response.status_code}.")
+        return f"API call failed with status code {response.status_code}."
+
+
+
+
+async def get_match_status(match_id: str):
+    print(f"\nMaking GET request for match event id: {match_id}")
+
+    # target_url = "https://porc.mywire.org/api/matches/get"
+    target_url = "http://localhost:8082/api/matches/get"
+
+    payload = {
+        "title": "Discord Bot match event put request",
+        "match_events": [match_id]
+    }
+
+    response = requests.put(target_url, json=payload)
+
+    if response.status_code == 200:
+
+        data = response.json()
+        error = data['error']
+
+        if f"{error}" == "None":
+            print(Fore.GREEN + Style.NORMAL + f"Match PUT request successful!")
+
+            match = data['data'][0]
+
+            print(f"found match: {match}")
+            return match["status"]
+
+        else:
+            print(Fore.RED + Style.NORMAL + f"API call failed with error message {error}.")
+
+
+    else:
+        print(Fore.RED + Style.NORMAL + f"API call failed with status code {response.status_code}.")
+
+

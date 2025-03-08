@@ -14,9 +14,12 @@ bot = Config.bot
 
 
 async def completion_script_0():
-    async def evaluator(dialogue_data, approval):
+    async def evaluator(dialogue_data, approval: bool, no_resp: bool):
         # print("completion script 0 executing")
-        if approval:
+        if no_resp:
+            return [-1, dialogue_data]
+
+        elif approval:
             await Storage.store_user(Config.remaining_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
             await Storage.remove_user(Config.contacted_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
             await Storage.remove_user(Config.declined_leap_file_name, bot.get_user(dialogue_data.user_id), dialogue_data.data.role)
@@ -44,15 +47,16 @@ async def completion_script_0():
 
 async def message_script_0():
     async def constructor(dialogue_data):
+        iteration = "fifth"
+        season_start = "1741460400"
         message = f'''
-Hello, I'm PORC bot, the new hire of the PORC organization team.
-As of now you are an active member of the second season of the PORC league which will end December 6th.
-If you want to **continue being a part of part of PORC for the third season please react to with** ✅ to this message.
-If you react with ❌ or do not react to this message you will **not be entered** into the third season of PORC.
-**Declining this message will take priority** over singups via other route like our website.
-Thanks for participating and we hope you enjoy your time with PORC.
+Hello again, as you are probably aware, the next season of PORC is about to begin!
+As of now, you have been an active member of the PORC league, which will start its next season on **<t:{season_start}:F>**.
+If you want to **continue being a part of PORC for the {iteration} season**, please react with ✅ to this message.
+If you react with ❌ or do not react to this message, you will **not be entered** into the {iteration} season of PORC.
+Thanks for participating in the last season, and we hope to see you around in the next one!
 
-**Do you want to participate in the third season of PORC?**
+**Do you want to participate in the {iteration} season of PORC?**
         '''.strip()
         return message
 
@@ -93,37 +97,29 @@ async def completion_script_end():
     return responder
 
 
-async def construct(user_id, role, index):
-    data = LeapData(role=role, sign_up_error=None)
-
-    dialogue_data = \
-        DialogueData(
-            "SeasonLeap",
-            user_id,
-            data
-        )
+async def construct(dialogue_data, index: int):
 
     return DialoguePlan(
         index,
         dialogue_data,
         [
             DialogueStep(
-                await message_script_0(), # would you like to sign up?
+                await message_script_0(),  # would you like to sign up?
                 "react",
                 await completion_script_0()
             ),
             DialogueStep(
-                await message_script_1(), # sign up complete
+                await message_script_1(),  # sign up complete
                 "info",
                 await completion_script_end()
             ),
             DialogueStep(
-                await message_script_2(), # decline registered successfully
+                await message_script_2(),  # decline registered successfully
                 "info",
                 await completion_script_end()
             ),
             DialogueStep(
-                await message_script_3(), # error occurred
+                await message_script_3(),  # error occurred
                 "info",
                 await completion_script_end()
             )

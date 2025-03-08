@@ -14,9 +14,12 @@ bot = Config.bot
 
 
 async def completion_script_0():
-    async def evaluator(dialogue_data, approval):
+    async def evaluator(dialogue_data, approval: bool, no_resp: bool):
         # print("completion script 0 executing")
-        if approval:
+        if no_resp:
+            return [-1, dialogue_data]
+
+        elif approval:
             await Storage.store_user(Config.pending_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
             await Storage.remove_user(Config.declined_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
             await Storage.remove_user(Config.confirmed_invite_file_name, bot.get_user(dialogue_data.user_id), "NaN")
@@ -35,14 +38,15 @@ async def completion_script_0():
 
 async def message_script_0():
     async def constructor(dialogue_data):
+        iteration = "fifth"
+        season_start = "1741460400"
         message = f'''
-Hello, I'm PORC bot, the newest member of the PORC organization team.
+Hello, I'm PORC bot, the organizer bot of PORC.
 You are receiving this message because you currently have the competitor role but are not competing in the PORC league.
-If you want to **sign up for the forth season of PORC**, which will start **December 18th**, please react with ✅ to this message.
-If you react with ❌ or do not react, you will **not be entered** into the forth season of PORC.
-**Declining this message will take priority** over singups via other route like our website.
+If you want to **sign up for the {iteration} season of PORC**, which will start **<t:{season_start}:F>**, please react with ✅ to this message.
+If you react with ❌ or do not react, you will **not be entered** into the {iteration} season of PORC.
 
-**Do you want to participate in the third season of PORC?**
+**Do you want to participate in the {iteration} season of PORC?**
         '''.strip()
         return message
 
@@ -110,42 +114,34 @@ async def completion_script_end():
     return responder
 
 
-async def construct(user_id, index):
-    data = InviteData(bp="NaN", sign_up_error=None)
-
-    dialogue_data = \
-        DialogueData(
-            "SeasonInvite",
-            user_id,
-            data
-        )
+async def construct(dialogue_data, index: int):
 
     return DialoguePlan(
         index,
         dialogue_data,
         [
             DialogueStep(
-                await message_script_0(), # would you like to sign up?
+                await message_script_0(),  # would you like to sign up?
                 "react",
                 await completion_script_0()
             ),
             DialogueStep(
-                await message_script_1(), # whats your BP?
+                await message_script_1(),  # whats your BP?
                 "response",
                 await completion_script_1()
             ),
             DialogueStep(
-                await message_script_2(), # your decline was registered
+                await message_script_2(),  # your decline was registered
                 "info",
                 await completion_script_end()
             ),
             DialogueStep(
-                await message_script_3(), # sign up successful
+                await message_script_3(),  # sign up successful
                 "info",
                 await completion_script_end()
             ),
             DialogueStep(
-                await message_script_4(), # error occurred
+                await message_script_4(),  # error occurred
                 "info",
                 await completion_script_end()
             )

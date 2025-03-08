@@ -9,6 +9,8 @@ import ServerCommunicationModule as API
 from colorama import Fore, Style
 import json
 import os
+from datetime import datetime, timezone, timedelta
+import random
 
 
 accept_emoji = "✅"
@@ -125,7 +127,7 @@ async def get_user_reaction(message, reacting_user):
 
 
 # @bot.command()
-async def check_reaction(user, prompt):
+async def check_reaction(user, prompt: str):
     # prompt = "prompt placeholder owo"
     # user_data = context.author
 
@@ -165,7 +167,7 @@ async def check_reaction(user, prompt):
 
 
 # returns either empty list or list with one element
-async def check_response(user, prompt):
+async def check_response(user, prompt: str):
 
     try:
         dm_channel = await user.create_dm()
@@ -200,3 +202,53 @@ async def check_response(user, prompt):
         response_messages = []
 
     return response_messages
+
+
+
+
+
+async def create_event(start_timestamp: int, channel_id: int, name: str, description: str):
+
+    guild = Config.bot.get_guild(Config.porc_guild_id)
+    channel = guild.get_channel(channel_id)
+
+    # Check if the provided channel is valid
+    if channel is None:
+        print(Fore.RED + Style.NORMAL + f"Channel could not be found")
+        return None
+    if not isinstance(channel, discord.StageChannel):
+        print(Fore.RED + Style.NORMAL + f"Channel is not a stage channel")
+        return None
+
+    start_time = datetime.fromtimestamp(start_timestamp, tz=timezone.utc)  # 5 min from now
+    end_time = start_time + timedelta(hours=1)  # Lasts 1 hour
+
+    try:
+        # Create the event in the selected voice channel
+        event = await guild.create_scheduled_event(
+            name=name,
+            description=description,
+            start_time=start_time,
+            end_time=end_time,
+            entity_type=discord.EntityType.stage_instance,  # Voice event
+            channel=channel,  # Set the event to the selected channel
+            privacy_level=discord.PrivacyLevel.guild_only
+        )
+        print(Fore.RESET + Style.NORMAL + "Event created successfully")
+        return event
+    except discord.Forbidden:
+        print(Fore.RED + Style.NORMAL + f"Missing permissions to create events")
+        return None
+    except discord.HTTPException as e:
+        print(Fore.RED + Style.NORMAL + f"failed to create event: {e}")
+        return None
+
+
+
+async def create_match_event(start_timestamp: int, challenger_username: str, opponent_username: str, league: str):
+
+    event_name = f"[{league}] {challenger_username} vs. {opponent_username}"
+    channel_id = Config.stage_channel_ids[random.randint(0, 2)]
+    description = ""
+
+    return await create_event(start_timestamp=start_timestamp, channel_id=channel_id, description=description, name=event_name)

@@ -1,41 +1,8 @@
 [
     {
         "dialogue_data": {
-            "kind": "SeasonLeap",
-            "user_id": 412067213898547201,
-            "data": {
-                "role": "DEV",
-                "sign_up_error": null
-            }
-        },
-        "current_index": 0
-    },
-    {
-        "dialogue_data": {
-            "kind": "SeasonLeap",
-            "user_id": 412067213898547201,
-            "data": {
-                "role": "DEV",
-                "sign_up_error": null
-            }
-        },
-        "current_index": 0
-    },
-    {
-        "dialogue_data": {
-            "kind": "SeasonLeap",
-            "user_id": 412067213898547201,
-            "data": {
-                "role": "DEV",
-                "sign_up_error": null
-            }
-        },
-        "current_index": 0
-    },
-    {
-        "dialogue_data": {
             "kind": "SeasonInvite",
-            "user_id": 412067213898547201,
+            "user_id": 641241851646574592,
             "data": {
                 "bp": "NaN",
                 "sign_up_error": null
@@ -46,12 +13,378 @@
     {
         "dialogue_data": {
             "kind": "SeasonInvite",
-            "user_id": 412067213898547201,
+            "user_id": 175826704298803201,
             "data": {
                 "bp": "NaN",
                 "sign_up_error": null
             }
         },
         "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 341994071717576705,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 247071818056335370,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 1330239309609046039,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 922818007330353185,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 732053824277184562,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 482053470484955146,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 597778302501126196,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 1281662811747127350,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 1084994854397956156,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 1194839552796401734,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 890440675471020104,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 1
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 1056706365294383185,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 736923089165877338,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 1158189263435870310,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 1117607583826595950,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 1109731287972970616,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 367687037312172032,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 189354759050887168,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 286373153641463808,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 214493893410947072,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 199760725059567616,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 126754956429623298,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 778728744356413440,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonInvite",
+            "user_id": 1207080506491928576,
+            "data": {
+                "bp": "NaN",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonLeap",
+            "user_id": 661914123503927307,
+            "data": {
+                "role": "Meteorite",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonLeap",
+            "user_id": 208344679119454210,
+            "data": {
+                "role": "Meteorite",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonLeap",
+            "user_id": 1047645209237917757,
+            "data": {
+                "role": "Adamantium",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonLeap",
+            "user_id": 486957106663129089,
+            "data": {
+                "role": "Platinum",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonLeap",
+            "user_id": 491784389341216768,
+            "data": {
+                "role": "Diamond",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonLeap",
+            "user_id": 1056210847292198933,
+            "data": {
+                "role": "Silver",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonLeap",
+            "user_id": 310746069200011266,
+            "data": {
+                "role": "Iron",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "SeasonLeap",
+            "user_id": 553644025140477971,
+            "data": {
+                "role": "Iron",
+                "sign_up_error": null
+            }
+        },
+        "current_index": 0
+    },
+    {
+        "dialogue_data": {
+            "kind": "MatchRequest",
+            "user_id": 306467062530965514,
+            "data": {
+                "challenger_id": 306467062530965514,
+                "event_id": null,
+                "league": "league",
+                "start_timestamp": 1741417200,
+                "opponent_id": 1002
+            }
+        },
+        "current_index": 4
     }
 ]

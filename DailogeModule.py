@@ -85,13 +85,13 @@ class DialogueStep:
                     decline = True
 
             if approval and not decline:
-                return await self.completion_script(dialogue_data=dialogue_data, approval=True)
+                return await self.completion_script(dialogue_data=dialogue_data, approval=True, no_resp=False)
 
             elif decline and not approval:
-                return await self.completion_script(dialogue_data=dialogue_data, approval=False)
+                return await self.completion_script(dialogue_data=dialogue_data, approval=False, no_resp=False)
 
             else:
-                return [-1, dialogue_data]
+                return await self.completion_script(dialogue_data=dialogue_data, approval=False, no_resp=True)
 
         elif self.completion_condition == "info":
             # print("checking for 'info' type")
@@ -113,6 +113,10 @@ class DialogueData:
 
         elif kind == "SeasonInvite":
             if not isinstance(data, InviteData):
+                raise ValueError("data type does not match DialogueData kind")
+
+        elif kind == "MatchRequest":
+            if not isinstance(data, MatchRequestData):
                 raise ValueError("data type does not match DialogueData kind")
 
         else:
@@ -139,8 +143,11 @@ class DialogueData:
         elif kind == "SeasonInvite":
             data = InviteData.deserialize(data_to_desirialize["data"])
 
+        elif kind == "MatchRequest":
+            data = MatchRequestData.deserialize(data_to_desirialize["data"])
+
         else:
-            raise ValueError("kind needs to be one of the following: 'SeasonLeap', 'SeasonInvite'")
+            raise ValueError("kind needs to be one of the following: 'SeasonLeap', 'SeasonInvite', 'MatchRequest'")
 
         return DialogueData (
             kind=kind,
@@ -185,6 +192,33 @@ class InviteData:
         )
 
 
+class MatchRequestData:
+    def __init__(self, challenger_id, opponent_id, start_timestamp, league, event_id):
+        self.challenger_id = challenger_id
+        self.opponent_id = opponent_id
+        self.start_timestamp = start_timestamp
+        self.league = league
+        self.event_id = event_id
+
+    def serialize(self):
+        return {
+            "challenger_id": self.challenger_id,
+            "event_id": self.event_id,
+            "league": self.league,
+            "start_timestamp": self.start_timestamp,
+            "opponent_id": self.opponent_id,
+        }
+
+    def deserialize(data):
+        return MatchRequestData(
+            challenger_id=data["challenger_id"],
+            event_id=data["event_id"],
+            league=data["league"],
+            start_timestamp=data["start_timestamp"],
+            opponent_id=data["opponent_id"]
+        )
+
+
 class DialogueBuilder:
     def __init__(self, dialogue_data, current_index):
         self.dialogue_data = dialogue_data
@@ -206,11 +240,15 @@ class DialogueBuilder:
 
         if self.dialogue_data.kind == "SeasonLeap":
             from DialogueRoutes.SeasonLeap import construct as leap_construct
-            return await leap_construct(user_id=self.dialogue_data.user_id, role=self.dialogue_data.data.role, index=self.current_index)
+            return await leap_construct(dialogue_data=self.dialogue_data, index=self.current_index)
 
         if self.dialogue_data.kind == "SeasonInvite":
             from DialogueRoutes.SeasonInvite import construct as invite_construct
-            return await invite_construct(user_id=self.dialogue_data.user_id, index=self.current_index)
+            return await invite_construct(dialogue_data=self.dialogue_data, index=self.current_index)
+
+        if self.dialogue_data.kind == "MatchRequest":
+            from DialogueRoutes.MatchRequest import construct as match_request_construct
+            return await match_request_construct(dialogue_data=self.dialogue_data, index=self.current_index)
 
         if self.dialogue_data.kind == "":
             return print("imported building function")
@@ -272,5 +310,33 @@ class DialogueInitiator:
             await Communication.send_info_message(Config.bot.get_user(user_id), message)
 
         await Storage.store_user(Config.contacted_invite_file_name, Config.bot.get_user(user_id), "NaN")
+
+        return builder
+
+    async def initiate_MatchRequest(self, user_id, challenger_id, opponent_id, start_timestamp, league):
+
+        builder = DialogueBuilder(
+            dialogue_data=DialogueData(
+                kind="MatchRequest",
+                user_id=user_id,
+                data=MatchRequestData(
+                    challenger_id=challenger_id,
+                    opponent_id=opponent_id,
+                    start_timestamp=start_timestamp,
+                    league=league,
+                    event_id=None
+                )
+            ),
+            current_index=0
+        )
+
+        plan = await builder.build()
+        message = await plan.steps[0].get_message(plan.dialogue_data)
+
+        if plan.steps[0].completion_condition == "react":
+            await Communication.send_prompt_message(Config.bot.get_user(user_id), message)
+
+        else:
+            await Communication.send_info_message(Config.bot.get_user(user_id), message)
 
         return builder
